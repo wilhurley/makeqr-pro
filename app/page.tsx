@@ -450,6 +450,9 @@ export default function Home() {
       <footer className="mt-12 border-t border-gray-100 dark:border-gray-800 py-6 text-center text-xs text-gray-400">
         <p>MakeQR.pro — Free QR Code Generator | Built by <a href="https://arctechnologiesllc.com" className="text-indigo-500 hover:underline">ARC Technologies LLC</a></p>
         <p className="mt-1">Also: <a href="https://floodzone.fyi" className="text-indigo-500 hover:underline">floodzone.fyi</a> · <a href="https://snap.vin" className="text-indigo-500 hover:underline">snap.vin</a></p>
+        <p className="mt-2">
+          <a href="/privacy" className="text-indigo-500 hover:underline">Privacy Policy</a>
+        </p>
       </footer>
 
       {/* Upgrade Modal */}
