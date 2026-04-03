@@ -451,7 +451,10 @@ export default function Home() {
         <p>MakeQR.pro — Free QR Code Generator | Built by <a href="https://arctechnologiesllc.com" className="text-indigo-500 hover:underline">ARC Technologies LLC</a></p>
         <p className="mt-1">Also: <a href="https://floodzone.fyi" className="text-indigo-500 hover:underline">floodzone.fyi</a> · <a href="https://snap.vin" className="text-indigo-500 hover:underline">snap.vin</a></p>
         <p className="mt-2">
-          <a href="/privacy" className="text-indigo-500 hover:underline">Privacy Policy</a>
+          <a href="/qr-code-best-practices" className="text-indigo-500 hover:underline">QR Best Practices</a> · {" "}
+          <a href="/about" className="text-indigo-500 hover:underline">About</a> · {" "}
+          <a href="/privacy" className="text-indigo-500 hover:underline">Privacy Policy</a> · {" "}
+          <a href="/terms" className="text-indigo-500 hover:underline">Terms</a>
         </p>
       </footer>
 
