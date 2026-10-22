@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import QRCode from "qrcode";
+import { formatProPrice } from "@/lib/pricing";
 
 type QRType = "url" | "text" | "email" | "phone" | "sms" | "wifi" | "vcard";
 
@@ -52,32 +53,60 @@ export default function Home() {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [logoFile, setLogoFile]   = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [restoreEmail, setRestoreEmail] = useState("");
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState("");
+  const [showRestoreHint, setShowRestoreHint] = useState(false);
+  const proPrice = formatProPrice();
   // Bulk generator state
   const [showBulk, setShowBulk]   = useState(false);
   const [bulkText, setBulkText]   = useState("https://example.com\nhttps://site2.com\nhttps://site3.com");
   const [bulkLoading, setBulkLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Check Pro status from localStorage + URL params on load
+  // Pro comes from a signed httpOnly cookie that the server re-checks against Stripe.
   useEffect(() => {
-    const stored = localStorage.getItem("qrpro");
-    if (stored === "true") { setIsPro(true); return; }
+    let cancelled = false;
+    const legacyPro = localStorage.getItem("qrpro") === "true";
+    localStorage.removeItem("qrpro");
 
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get("session_id");
-    const proStatus = params.get("pro");
+    const load = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get("session_id");
+      const proStatus = params.get("pro");
+      const billingReturn = params.get("billing") === "return";
 
-    if (proStatus === "success" && sessionId) {
-      fetch(`/api/verify-session?session_id=${sessionId}`)
-        .then(r => r.json())
-        .then(d => {
-          if (d.valid) {
-            setIsPro(true);
-            localStorage.setItem("qrpro", "true");
-            window.history.replaceState({}, "", "/");
-          }
-        });
-    }
+      if (proStatus === "success" && sessionId) {
+        try {
+          await fetch(`/api/verify-session?session_id=${encodeURIComponent(sessionId)}`);
+        } catch {
+          // /api/pro below reports the cookie, if the server set one.
+        }
+        window.history.replaceState({}, "", "/");
+      } else if (billingReturn) {
+        window.history.replaceState({}, "", "/");
+      }
+
+      try {
+        const res = await fetch(billingReturn ? "/api/pro?fresh=1" : "/api/pro");
+        const data = await res.json();
+        if (cancelled) return;
+        const pro = Boolean(data.pro);
+        setIsPro(pro);
+        if (legacyPro && !pro) setShowRestoreHint(true);
+      } catch {
+        if (!cancelled && legacyPro) setShowRestoreHint(true);
+      }
+    };
+
+    void load();
+    const interval = window.setInterval(() => { void load(); }, 60 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
   }, []);
 
   const buildQrData = useCallback((): string => {
@@ -151,11 +180,55 @@ export default function Home() {
 
   const startCheckout = async () => {
     setCheckoutLoading(true);
+    setCheckoutError("");
     try {
       const res  = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setCheckoutError(typeof data.error === "string" ? data.error : "Could not start checkout.");
+    } catch {
+      setCheckoutError("Could not start checkout.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const openBillingPortal = async () => {
+    setBillingLoading(true);
+    try {
+      const res = await fetch("/api/billing-portal", { method: "POST" });
+      const data = await res.json();
       if (data.url) window.location.href = data.url;
-    } catch { setCheckoutLoading(false); }
+      else setBillingLoading(false);
+    } catch { setBillingLoading(false); }
+  };
+
+  const restorePro = async () => {
+    setRestoreLoading(true);
+    setRestoreMessage("");
+    try {
+      const res = await fetch("/api/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: restoreEmail }),
+      });
+      const data = await res.json();
+      if (data.pro) {
+        setIsPro(true);
+        setShowUpgrade(false);
+        setShowRestoreHint(false);
+        setRestoreMessage("");
+      } else {
+        setRestoreMessage(data.error || "No active subscription found for that email.");
+      }
+    } catch {
+      setRestoreMessage("Could not reach the server. Try again.");
+    } finally {
+      setRestoreLoading(false);
+    }
   };
 
   const downloadPng = () => {
@@ -226,11 +299,22 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <p className="text-xs text-gray-500 hidden sm:block">No signup · No watermark</p>
-            {!isPro && (
-              <button onClick={() => setShowUpgrade(true)}
-                className="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:opacity-90 transition">
-                Upgrade $4.99/mo
+            {isPro ? (
+              <button onClick={openBillingPortal} disabled={billingLoading}
+                className="text-xs border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition">
+                {billingLoading ? "Opening..." : "Manage billing"}
               </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowUpgrade(true)}
+                  className="text-xs font-semibold text-indigo-600 hover:underline">
+                  Restore
+                </button>
+                <button onClick={() => setShowUpgrade(true)}
+                  className="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:opacity-90 transition">
+                  Upgrade {proPrice}/mo
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -244,6 +328,17 @@ export default function Home() {
             Create QR codes for URLs, WiFi, contacts, SMS, email and more — free, instant, no account needed.
           </p>
         </div>
+
+        {showRestoreHint && !isPro && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center gap-3">
+            <p className="flex-1">
+              Pro on this browser used to be saved only on this device. Restore it with the email from your Stripe receipt so cancellation applies here too.
+            </p>
+            <button onClick={() => setShowUpgrade(true)} className="text-sm font-semibold text-indigo-700 shrink-0">
+              Restore Pro
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left panel */}
@@ -398,7 +493,7 @@ export default function Home() {
               {!isPro && (
                 <button onClick={() => setShowUpgrade(true)}
                   className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition">
-                  ✨ Upgrade to Pro — $4.99/mo
+                  ✨ Upgrade to Pro — {proPrice}/mo
                 </button>
               )}
               <p className="text-center text-xs text-gray-400 mt-2">Free · No watermark · No signup</p>
@@ -427,10 +522,10 @@ export default function Home() {
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Frequently Asked Questions</h2>
           <div className="space-y-5">
             {[
-              { q: "Is MakeQR Pro really free to use?", a: "The core features are 100% free — URL and text QR codes, custom colors, and PNG download with no signup required. Pro ($4.99/month) unlocks all 7 QR types, logo overlay, bulk generation, SVG export, and sizes up to 1024px." },
+              { q: "Is MakeQR Pro really free to use?", a: `The core features are 100% free — URL and text QR codes, custom colors, and PNG download with no signup required. Pro (${proPrice}/month) unlocks all 7 QR types, logo overlay, bulk generation, SVG export, and sizes up to 1024px.` },
               { q: "How do I make a QR code for my website?", a: "Select the URL tab, paste your website link, pick a color and size, then click Download PNG. Your QR code is ready instantly — no account or email needed." },
               { q: "How do I create a WiFi QR code for my business?", a: "Select the WiFi tab (Pro feature), enter your network name (SSID), password, and security type. Customers scan the code to connect automatically — great for restaurants, coffee shops, retail, hotels, and Airbnbs." },
-              { q: "What's included in Pro ($4.99/month)?", a: "All 7 QR types (URL, Text, WiFi, Email, Phone, SMS, Contact), logo overlay in the center of your QR code, bulk QR generator (paste a list of URLs → download as ZIP), SVG vector download, sizes up to 1024px for high-res print, and no ads." },
+              { q: `What's included in Pro (${proPrice}/month)?`, a: "All 7 QR types (URL, Text, WiFi, Email, Phone, SMS, Contact), logo overlay in the center of your QR code, bulk QR generator (paste a list of URLs → download as ZIP), SVG vector download, sizes up to 1024px for high-res print, and no ads." },
               { q: "Can I add my logo to a QR code?", a: "Yes — Pro subscribers can upload any image as a logo and it appears in the center of the QR code. The high error correction ensures it stays scannable even with a logo covering part of it." },
               { q: "Can I generate QR codes in bulk?", a: "Yes — Pro users can paste a list of URLs (one per line) in the Bulk Generator and download all QR codes as a ZIP file in seconds. Perfect for agencies, print shops, and businesses managing multiple locations." },
               { q: "What formats can I download my QR code in?", a: "Free: PNG (high quality for web and screens). Pro: PNG + SVG (vector format that scales to any size with no quality loss — ideal for large print, signage, and merchandise)." },
@@ -482,9 +577,31 @@ export default function Home() {
             </div>
             <button onClick={startCheckout} disabled={checkoutLoading}
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-2xl hover:opacity-90 disabled:opacity-50 transition text-lg">
-              {checkoutLoading ? "Redirecting..." : "Get Pro — $4.99 / month"}
+              {checkoutLoading ? "Redirecting..." : `Get Pro — ${proPrice} / month`}
             </button>
+            {checkoutError && <p className="text-center text-xs text-red-500 mt-2">{checkoutError}</p>}
             <p className="text-center text-xs text-gray-400 mt-3">Cancel anytime · Secure checkout via Stripe</p>
+            <form onSubmit={(e) => { e.preventDefault(); void restorePro(); }} className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Already subscribed?</p>
+              <p className="text-xs text-gray-500 mb-2">
+                Enter the email from your Stripe receipt. Current {proPrice}/month checkouts and existing $4.99 subscriptions both restore.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  required
+                  value={restoreEmail}
+                  onChange={(e) => setRestoreEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  className={inputClass}
+                />
+                <button type="submit" disabled={restoreLoading}
+                  className="shrink-0 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold px-4 hover:opacity-90 disabled:opacity-50">
+                  {restoreLoading ? "..." : "Restore"}
+                </button>
+              </div>
+              {restoreMessage && <p className="text-xs text-red-500 mt-2">{restoreMessage}</p>}
+            </form>
           </div>
         </div>
       )}

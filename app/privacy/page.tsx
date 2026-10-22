@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const LAST_UPDATED = "March 19, 2026";
+const LAST_UPDATED = "October 22, 2026";
 const CONTACT_EMAIL = "privacy@makeqr.pro";
 const SITE_URL = "https://makeqr.pro";
 
@@ -150,7 +150,10 @@ export default function PrivacyPage() {
               >
                 Privacy Policy
               </a>
-              . We receive only a Stripe customer ID and subscription status.
+              . We receive a Stripe customer ID and subscription status and keep them in a signed
+              httpOnly cookie so this browser can stay in sync with Stripe. We do not run a separate
+              account database. If you restore Pro on another device, the email you enter is sent to
+              Stripe to look up an active subscription and is not stored on our servers.
             </p>
           </section>
 
@@ -190,7 +193,9 @@ export default function PrivacyPage() {
                 <tbody>
                   <tr>
                     <td className="p-3 border border-gray-200">Essential</td>
-                    <td className="p-3 border border-gray-200">Session management, security</td>
+                    <td className="p-3 border border-gray-200">
+                      Session management, security, and the signed Pro subscription cookie
+                    </td>
                   </tr>
                   <tr className="bg-gray-50">
                     <td className="p-3 border border-gray-200">Preference</td>

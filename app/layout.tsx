@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
+import { formatProPrice, proPriceAmount } from "@/lib/pricing";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -77,6 +78,13 @@ export const metadata: Metadata = {
     creator: "@ARCTechLLC",
   },
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -93,7 +101,10 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const jsonLd = {
+function buildJsonLd() {
+  const priceLabel = formatProPrice();
+  const priceAmount = proPriceAmount();
+  return {
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -114,10 +125,9 @@ const jsonLd = {
         },
         {
           "@type": "Offer",
-          price: "4.99",
+          price: priceAmount,
           priceCurrency: "USD",
-          description:
-            "Pro plan — all 7 QR types, logo overlay, bulk generator, SVG export, larger sizes",
+          description: `Pro plan — all 7 QR types, logo overlay, bulk generator, SVG export, larger sizes (${priceLabel}/month)`,
         },
       ],
     },
@@ -129,7 +139,7 @@ const jsonLd = {
           name: "Is MakeQR Pro really free to use?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Yes. URL and text QR codes, custom colors, and PNG download are 100% free with no signup required. Pro unlocks WiFi, SMS, Contact, logo overlay, bulk generation, SVG export, and sizes up to 1024px for $4.99/month.",
+            text: `Yes. URL and text QR codes, custom colors, and PNG download are 100% free with no signup required. Pro unlocks WiFi, SMS, Contact, logo overlay, bulk generation, SVG export, and sizes up to 1024px for ${priceLabel}/month.`,
           },
         },
         {
@@ -153,7 +163,7 @@ const jsonLd = {
           name: "Can I add my logo to a QR code?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Yes — with a Pro subscription ($4.99/month) you can upload any image as a logo and it will appear in the center of your QR code. The high error correction level ensures the code remains scannable.",
+            text: `Yes — with a Pro subscription (${priceLabel}/month) you can upload any image as a logo and it will appear in the center of your QR code. The high error correction level ensures the code remains scannable.`,
           },
         },
         {
@@ -191,8 +201,10 @@ const jsonLd = {
     },
   ],
 };
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const jsonLd = buildJsonLd();
   return (
     <html lang="en">
       <head>
