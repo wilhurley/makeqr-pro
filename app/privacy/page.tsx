@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteFooter } from "@/components/SiteFooter";
+import { pageMetadata, SUPPORT_EMAIL } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | MakeQR Pro",
-  description:
-    "Privacy Policy for MakeQR Pro — learn how we collect, use, and protect your data.",
-  alternates: { canonical: "https://makeqr.pro/privacy" },
-  robots: { index: true, follow: true },
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Privacy Policy",
+  description: "Privacy Policy for MakeQR Pro — learn how we collect, use, and protect your data.",
+  path: "/privacy",
+});
 
-const LAST_UPDATED = "March 19, 2026";
-const CONTACT_EMAIL = "privacy@makeqr.pro";
+const LAST_UPDATED = "October 22, 2026";
+const CONTACT_EMAIL = SUPPORT_EMAIL;
 const SITE_URL = "https://makeqr.pro";
 
 export default function PrivacyPage() {
@@ -37,8 +37,8 @@ export default function PrivacyPage() {
 
           <section>
             <p>
-              MakeQR Pro (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), operated by ARC Technologies LLC,
-              is committed to protecting your privacy. This Privacy Policy explains what information we
+              MakeQR Pro (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), operated by Ridgeline Apps LLC
+              in Wheelersburg, Ohio, is committed to protecting your privacy. This Privacy Policy explains what information we
               collect when you use <a href={SITE_URL} className="text-indigo-600">{SITE_URL}</a> (the
               &quot;Service&quot;), how we use it, and your rights regarding that information.
             </p>
@@ -295,7 +295,8 @@ export default function PrivacyPage() {
               If you have questions or concerns about this Privacy Policy, please contact:
             </p>
             <div className="bg-gray-50 rounded-lg p-4 mt-3 text-sm">
-              <p className="font-medium text-gray-900">ARC Technologies LLC</p>
+              <p className="font-medium text-gray-900">Ridgeline Apps LLC</p>
+              <p>Wheelersburg, Ohio</p>
               <p>
                 Email:{" "}
                 <a href={`mailto:${CONTACT_EMAIL}`} className="text-indigo-600">
@@ -307,6 +308,7 @@ export default function PrivacyPage() {
           </section>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }

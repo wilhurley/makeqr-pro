@@ -1,108 +1,109 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteFooter } from "@/components/SiteFooter";
+import { COMPANY, COMPANY_LOCATION, pageMetadata, SUPPORT_EMAIL } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Terms of Service | MakeQR Pro",
-  description:
-    "Terms of Service for MakeQR Pro, including acceptable use, subscription terms, and service limitations.",
-  alternates: {
-    canonical: "https://makeqr.pro/terms",
-  },
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Terms of Service",
+  description: "The terms for using MakeQR Pro's free QR code generator and the Pro subscription.",
+  path: "/terms",
+});
 
-const LAST_UPDATED = "April 3, 2026";
+const LAST_UPDATED = "October 22, 2026";
 
 export default function TermsPage() {
   return (
     <main className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-6 py-16">
-        <div className="mb-10">
-          <Link href="/" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium mb-6 inline-block">
-            Back to MakeQR Pro
-          </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">Terms of Service</h1>
-          <p className="text-gray-500 text-sm">Last updated: {LAST_UPDATED}</p>
-        </div>
+        <Link href="/" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+          ← Back to MakeQR Pro
+        </Link>
+        <h1 className="text-4xl font-bold text-gray-900 mt-3 mb-3">Terms of Service</h1>
+        <p className="text-gray-500 text-sm">Last updated: {LAST_UPDATED}</p>
 
-        <div className="space-y-7 text-gray-700 leading-relaxed">
+        <div className="space-y-7 text-gray-700 leading-relaxed mt-8">
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">1. Acceptance of terms</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">1. Who operates the service</h2>
             <p>
-              By using MakeQR Pro, you agree to these Terms of Service. If you do not agree, do not use the service.
+              MakeQR Pro is operated by {COMPANY}, in {COMPANY_LOCATION}. These terms cover the free QR code generator at{" "}
+              <a href="https://makeqr.pro" className="text-indigo-600">https://makeqr.pro</a> and the Pro subscription. If you use the site, you&apos;re agreeing to them.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">2. Service description</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">2. What you can make</h2>
             <p>
-              MakeQR Pro provides an online QR code generation tool with free and paid subscription features. Features and
-              limits may change as the service evolves.
+              Free includes URL and text codes, custom colors, and a PNG download, with no signup and no watermark. Free PNG goes up to 512px.
+            </p>
+            <p className="mt-2">
+              Pro is $4.99 per month. It adds WiFi, email, phone, SMS, and contact codes, a logo in the center, SVG download, PNG sizes up to 1024px, and bulk generation. Bulk is a list of URLs you paste, one per line, downloaded as a ZIP.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">3. Acceptable use</h2>
-            <p className="mb-2">You agree not to use MakeQR Pro for unlawful or harmful activities, including:</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">3. Codes are static</h2>
+            <p>
+              What you enter is encoded into the image when you download it. MakeQR Pro does not host that link, and it cannot change the code after you download it. If the encoded link or text needs to change, make and print a new code. We don&apos;t count scans, and we don&apos;t keep a copy of the content you typed. The code is built in your browser.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">4. Pro billing and cancellation</h2>
+            <p>
+              Pro is billed by Stripe, $4.99 per month, charged in advance. It renews each month until you cancel. You can cancel anytime by emailing{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="text-indigo-600">{SUPPORT_EMAIL}</a>.
+              Canceling stops the next renewal. Unless the law requires it, we don&apos;t refund a month that has already started.
+            </p>
+            <p className="mt-2">
+              We don&apos;t store your full card number. Stripe does. There isn&apos;t a separate MakeQR account or password. When checkout succeeds, Pro unlocks in the browser you used. Clearing that browser&apos;s saved site data can turn Pro off on that device. Email us if you already paid and need a hand.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">5. Acceptable use</h2>
+            <p className="mb-2">Don&apos;t use MakeQR Pro for anything unlawful or harmful, including:</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>Malware distribution, phishing, fraud, or deceptive redirects</li>
-              <li>Content that violates intellectual property rights</li>
-              <li>Automated abuse that degrades service availability</li>
+              <li>Malware, phishing, fraud, or misleading links</li>
+              <li>Content that violates someone else&apos;s rights</li>
+              <li>Automated abuse that gets in the way of the site working for other people</li>
             </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">4. Accounts and subscriptions</h2>
-            <p>
-              Pro subscriptions are billed through Stripe. You are responsible for maintaining valid billing details. Unless
-              canceled, subscriptions renew according to the billing interval shown at checkout.
+            <p className="mt-2">
+              You&apos;re responsible for what you encode. We don&apos;t review every link, and we don&apos;t promise that a destination is safe or still online.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">5. Payments and refunds</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">6. Availability</h2>
             <p>
-              Fees are charged in advance for the selected billing period. Unless required by law, fees are non-refundable after
-              the billing period begins. You can cancel renewal at any time through your billing portal.
+              The site is provided as-is. We don&apos;t guarantee that it will be up every minute, that every phone will scan every code, or that a particular design will print well. Test a sample before you print a stack.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">6. Content and generated output</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">7. Limitation of liability</h2>
             <p>
-              You retain responsibility for any content encoded into QR codes. We do not guarantee the legality, accuracy,
-              or safety of user-provided URLs, text, or files.
+              To the fullest extent the law allows, {COMPANY} is not liable for indirect, incidental, or consequential damages related to your use of MakeQR Pro. These terms are governed by the laws of the State of Ohio.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">7. Availability and warranties</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">8. Changes</h2>
             <p>
-              The service is provided on an as-is and as-available basis. We do not guarantee uninterrupted access,
-              scan performance on every device, or suitability for every use case.
+              We may update these terms. When we do, we&apos;ll change the date at the top. If you keep using the site after that, you&apos;re agreeing to the update.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">8. Limitation of liability</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">9. Contact</h2>
             <p>
-              To the fullest extent allowed by law, ARC Technologies LLC is not liable for indirect, incidental, or consequential
-              damages related to your use of MakeQR Pro.
+              Questions about these terms:{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="text-indigo-600">{SUPPORT_EMAIL}</a>.
+              {COMPANY}, {COMPANY_LOCATION}. The <Link href="/privacy" className="text-indigo-600">privacy policy</Link> covers what the site collects.
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">9. Changes to terms</h2>
-            <p>
-              We may update these terms from time to time. Continued use after updates means you accept the revised terms.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">10. Contact</h2>
-            <p>Questions about these terms can be sent to support@makeqr.pro.</p>
           </section>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }
