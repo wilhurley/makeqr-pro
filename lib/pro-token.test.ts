@@ -117,20 +117,20 @@ describe("billing cookie", () => {
 });
 
 describe("price config", () => {
-  it("defaults to the approved $3.99 and formats whole dollars without cents", () => {
-    assert.equal(getProPriceCents(), 399);
-    assert.equal(formatProPrice(), "$3.99");
-    assert.equal(proPriceAmount(), "3.99");
+  it("defaults to $4.99 and formats whole dollars without cents", () => {
+    assert.equal(getProPriceCents(), 499);
+    assert.equal(formatProPrice(), "$4.99");
+    assert.equal(proPriceAmount(), "4.99");
     assert.equal(formatProPrice(500), "$5");
     assert.equal(formatProPrice(499), "$4.99");
     assert.equal(proPriceAmount(499), "4.99");
   });
 
   it("reads NEXT_PUBLIC_PRO_PRICE_CENTS and ignores invalid values", () => {
-    process.env.NEXT_PUBLIC_PRO_PRICE_CENTS = "499";
-    assert.equal(getProPriceCents(), 499);
+    process.env.NEXT_PUBLIC_PRO_PRICE_CENTS = "599";
+    assert.equal(getProPriceCents(), 599);
     process.env.NEXT_PUBLIC_PRO_PRICE_CENTS = "nope";
-    assert.equal(getProPriceCents(), 399);
+    assert.equal(getProPriceCents(), 499);
   });
 });
 

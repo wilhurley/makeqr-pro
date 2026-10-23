@@ -34,32 +34,32 @@ describe("plan config", () => {
     );
   });
 
-  it("offers only monthly at $3.99 when only the monthly price is set", () => {
+  it("offers only monthly at $4.99 when only the monthly price is set", () => {
     const config = planConfig(BASE);
     assert.equal(config.configured, true);
-    assert.deepEqual(config.plans.map((p) => [p.id, p.cents, p.mode]), [["monthly", 399, "subscription"]]);
+    assert.deepEqual(config.plans.map((p) => [p.id, p.cents, p.mode]), [["monthly", 499, "subscription"]]);
   });
 
-  it("never falls back to the legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID (old $4.99 Price)", () => {
+  it("never falls back to the legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ", () => {
     const legacyOnly = planConfig({ STRIPE_SECRET_KEY: "sk", NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: "price_legacy" });
     assert.deepEqual(legacyOnly, { configured: false, plans: [] }, "coming soon, no charge");
     const both = planConfig({ ...BASE, NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: "price_legacy" });
     assert.equal(findPlan(both, "monthly")?.priceId, "price_month");
   });
 
-  it("adds yearly ($29) and lifetime ($39, one-time) only when their price ids are set", () => {
+  it("adds yearly ($39) and lifetime ($79, one-time) only when their price ids are set", () => {
     const yearlyOnly = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year" });
     assert.deepEqual(yearlyOnly.plans.map((p) => p.id), ["monthly", "yearly"]);
     assert.equal(findPlan(yearlyOnly, "lifetime"), null);
 
     const all = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
     assert.deepEqual(all.plans.map((p) => [p.id, p.cents, p.mode, p.priceId]), [
-      ["monthly", 399, "subscription", "price_month"],
-      ["yearly", 2900, "subscription", "price_year"],
-      ["lifetime", 3900, "payment", "price_life"],
+      ["monthly", 499, "subscription", "price_month"],
+      ["yearly", 3900, "subscription", "price_year"],
+      ["lifetime", 7900, "payment", "price_life"],
     ]);
-    assert.equal(findPlan(all, "lifetime")?.badge, "Launch lifetime deal, limited");
-    assert.equal(LIFETIME_BADGE, "Launch lifetime deal, limited");
+    assert.equal(findPlan(all, "lifetime")?.badge, "Pay once, no renewals");
+    assert.equal(LIFETIME_BADGE, "Pay once, no renewals");
   });
 
   it("uses the display-price env vars and ignores bad values", () => {
@@ -71,7 +71,7 @@ describe("plan config", () => {
       NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS: "3500",
       NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS: "nope",
     });
-    assert.deepEqual(config.plans.map((p) => p.cents), [500, 3500, 3900]);
+    assert.deepEqual(config.plans.map((p) => p.cents), [500, 3500, 7900]);
   });
 
   it("only accepts known plan ids from the browser", () => {

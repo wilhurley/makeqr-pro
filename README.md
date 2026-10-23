@@ -31,18 +31,18 @@ Set these in `.env.local` and in the Vercel project (**Production**, and **Previ
 | --- | --- | --- |
 | `STRIPE_SECRET_KEY` | server | Stripe API key. A restricted key is enough. |
 | `STRIPE_PRO_PRICE_ID` | server | Price id used for **new** Checkout sessions. |
-| `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | — | **Ignored.** It pointed at the old $4.99 Price. Checkout never falls back to it; without `STRIPE_PRO_PRICE_ID` Pro is "coming soon" and nobody is charged. Remove it from Vercel. |
+| `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | — | **Ignored.** Checkout never falls back to it; without `STRIPE_PRO_PRICE_ID` Pro is "coming soon" and nobody is charged. Remove it from Vercel. |
 | `STRIPE_BILLING_PORTAL_LOGIN_URL` | server | Optional. Your Stripe customer-portal login link (`https://billing.stripe.com/p/login/...`). Browsers that restored Pro by email are sent here for Manage billing; Stripe emails the customer a code. |
 | `STRIPE_WEBHOOK_SECRET` | server | Signing secret for `POST /api/stripe/webhook`. |
 | `PRO_COOKIE_SECRET` | server | HMAC secret for the `qr_pro` httpOnly cookie. At least 16 characters; use `openssl rand -base64 32`. |
 | `NEXT_PUBLIC_APP_URL` | public | Origin for Checkout and Billing Portal return URLs, e.g. `https://makeqr.pro`. |
-| `NEXT_PUBLIC_PRO_PRICE_CENTS` | public | Price shown in the UI and Offer structured data, in US cents. `399` (the default) is `$3.99`. Must match the Stripe Price. Requires a rebuild. |
-| `STRIPE_PRO_YEARLY_PRICE_ID` | server | Optional. Recurring **$29 / year** Price. The yearly button only shows when this is set. |
-| `NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS` | public | Optional display price for yearly. Default `2900` = `$29`. Must match the Stripe Price. |
-| `STRIPE_PRO_LIFETIME_PRICE_ID` | server | Optional. One-time **$39** Price (not recurring). Shown as "Launch lifetime deal, limited" only when this is set. |
-| `NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS` | public | Optional display price for lifetime. Default `3900` = `$39`. Must match the Stripe Price. |
+| `NEXT_PUBLIC_PRO_PRICE_CENTS` | public | Price shown in the UI and Offer structured data, in US cents. `499` (the default) is `$4.99`. Must match the Stripe Price. Requires a rebuild. |
+| `STRIPE_PRO_YEARLY_PRICE_ID` | server | Optional. Recurring **$39 / year** Price. The yearly button only shows when this is set. |
+| `NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS` | public | Optional display price for yearly. Default `7900` = `$79`. Must match the Stripe Price. |
+| `STRIPE_PRO_LIFETIME_PRICE_ID` | server | Optional. One-time **$79** Price (not recurring). Shown only when this is set. |
+| `NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS` | public | Optional display price for lifetime. Default `7900` = `$79`. Must match the Stripe Price. |
 
-**Pro coming soon:** until both `STRIPE_SECRET_KEY` and `STRIPE_PRO_PRICE_ID` are set (the legacy `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` is never used, so a $3.99 display can't charge the old $4.99 Price), every Get Pro / Upgrade button says "Pro coming soon" and links to a waitlist email (`support@ridgelineapps.us`), and `/api/checkout` returns `503 {comingSoon: true}` instead of an error. The browser reads `GET /api/plans` (no Stripe ids exposed) to decide, so turning Stripe on only needs the env vars and a redeploy. Yearly and lifetime never show without the monthly Price. Pro stays off if `PRO_COOKIE_SECRET` is missing.
+**Pro coming soon:** until both `STRIPE_SECRET_KEY` and `STRIPE_PRO_PRICE_ID` are set (the legacy `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` is never used, so the charged Price is always explicit, not the old $4.99 Price), every Get Pro / Upgrade button says "Pro coming soon" and links to a waitlist email (`support@ridgelineapps.us`), and `/api/checkout` returns `503 {comingSoon: true}` instead of an error. The browser reads `GET /api/plans` (no Stripe ids exposed) to decide, so turning Stripe on only needs the env vars and a redeploy. Yearly and lifetime never show without the monthly Price. Pro stays off if `PRO_COOKIE_SECRET` is missing.
 
 ## How Pro works
 
@@ -50,7 +50,7 @@ Set these in `.env.local` and in the Vercel project (**Production**, and **Previ
 2. The success URL calls `/api/verify-session`, which loads the Checkout Session and its Subscription. A signed httpOnly cookie (`qr_pro`) is set only when the subscription is `active` or `trialing` (or the lifetime payment is recorded), plus a separate billing cookie (`qr_billing`, 30 days, sliding) because the Checkout Session id proves this browser made the purchase. If verification fails (non-2xx, `valid: false`, or a network error) the page keeps the session id and shows **Try again**; reloads and the hourly check retry too.
 3. The browser asks `/api/pro` on load and about once an hour. The cookie is trusted for one hour, then the server retrieves that subscription from Stripe and replaces or clears the cookie. Returning from the billing portal forces a fresh check.
 4. **Cancel at period end** keeps Pro until Stripe flips the subscription off `active`. **Canceled, unpaid, incomplete, or paused** subscriptions lose Pro on the next check. There is no localStorage flag.
-5. **Restore** (`POST /api/restore`) looks up Stripe Customers by email and sets the same cookie when one of them has an entitled subscription. Any Price qualifies, so existing **$4.99** subscribers keep Pro after new sales move to **$3.99**. The lookup is case-insensitive (Stripe's `customers.list` email filter is case-sensitive, so it also uses the typed form and Stripe Search). Restore unlocks Pro features only. It never sets `qr_billing`, because knowing an email does not prove owning it. It is rate-limited per IP and email on a best-effort basis.
+5. **Restore** (`POST /api/restore`) looks up Stripe Customers by email and sets the same cookie when one of them has an entitled subscription. Any Price qualifies, so existing subscribers keep Pro whichever Price they are on. The lookup is case-insensitive (Stripe's `customers.list` email filter is case-sensitive, so it also uses the typed form and Stripe Search). Restore unlocks Pro features only. It never sets `qr_billing`, because knowing an email does not prove owning it. It is rate-limited per IP and email on a best-effort basis.
 6. **Manage billing** opens the Stripe Customer Portal for the customer in `qr_billing`, and still shows when Pro has lapsed (past_due/unpaid) so the customer can fix the card or cancel. Without `qr_billing` (e.g. after an email restore) it redirects to `STRIPE_BILLING_PORTAL_LOGIN_URL` if set. Both cookies reject expired claims on the server, not only via browser `Max-Age`.
 7. **Lifetime** has no subscription. When a lifetime Checkout Session is paid, `/api/verify-session` and the `checkout.session.completed` / `checkout.session.async_payment_succeeded` webhook (whichever comes first, idempotent) write Customer metadata `makeqr_pro_lifetime=<payment_intent id>`. The cookie then carries `sub: "lifetime"`, and the hourly `/api/pro` re-check and Restore read that Customer, and the buying browser gets `qr_billing` for Manage billing. Lifetime never expires; it ends only if the Customer is blocked (dispute / early fraud warning) or that payment is fully refunded (`charge.refunded` clears the metadata).
 8. **Webhooks** verify `Stripe-Signature` with `STRIPE_WEBHOOK_SECRET`. Subscription updates are not stored locally — the next `/api/pro` read sees them. `charge.dispute.created` and `radar.early_fraud_warning.created` set Customer metadata `makeqr_pro_block`, which blocks the cookie and restore. For subscriptions, `charge.refunded` does not by itself remove Pro; cancel the subscription when a refund should end access. For lifetime, a full refund removes it.
@@ -59,12 +59,12 @@ The cookie is a pointer to a Stripe subscription (or a lifetime Customer), not a
 
 ## Stripe Dashboard steps
 
-Do these before pointing production at this build. Do not delete or migrate the current $4.99 Price.
+Do these before pointing production at this build. Keep the current $4.99 Price; it is the monthly price.
 
-1. Open the existing Pro Product. Add a new recurring **$3.99 / month** Price. Leave the **$4.99** Price active so current subscriptions renew at $4.99.
-2. Copy the new Price id into `STRIPE_PRO_PRICE_ID`. Set `NEXT_PUBLIC_PRO_PRICE_CENTS` to `399`.
-   - Optional yearly: on the same Product add a recurring **$29.00 / year** Price → `STRIPE_PRO_YEARLY_PRICE_ID` (`NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS=2900`).
-   - Optional lifetime: on the same Product add a **one-time $39.00** Price → `STRIPE_PRO_LIFETIME_PRICE_ID` (`NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS=3900`). The "limited" launch cap (first 300) is not enforced in code; remove the env var to stop selling it.
+1. Open the existing Pro Product and confirm its recurring **$4.99 / month** Price (create one if missing).
+2. Copy that Price id into `STRIPE_PRO_PRICE_ID`. Set `NEXT_PUBLIC_PRO_PRICE_CENTS` to `499`.
+   - Optional yearly: on the same Product add a recurring **$39.00 / year** Price → `STRIPE_PRO_YEARLY_PRICE_ID` (`NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS=3900`).
+   - Optional lifetime: on the same Product add a **one-time $79.00** Price → `STRIPE_PRO_LIFETIME_PRICE_ID` (`NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS=7900`). Remove the env var to stop selling it.
 3. Developers → Webhooks → add endpoint `https://makeqr.pro/api/stripe/webhook`. Subscribe to:
    - `checkout.session.completed`
    - `checkout.session.async_payment_succeeded`

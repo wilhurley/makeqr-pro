@@ -2,13 +2,13 @@
  * Pro plans offered at checkout. Pure functions with no imports so they can be
  * unit-tested with plain `node --test`.
  *
- * Approved prices (Jason, 2026-10-23): $3.99/mo, $29/yr, $39 lifetime (launch deal, first 300).
+ * Prices: $4.99/mo, $39/yr, $79 lifetime (one-time).
  *
  * - Monthly needs STRIPE_PRO_PRICE_ID and STRIPE_SECRET_KEY. The legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
- *   (the old $4.99 Price) is never used, so a $3.99 display can't charge $4.99. Without both, Stripe is "not configured" and the site shows "Pro coming soon" with a waitlist link.
- * - Yearly shows only when STRIPE_PRO_YEARLY_PRICE_ID is set. Display price: NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS (default 2900).
+ *   is never read; set STRIPE_PRO_PRICE_ID explicitly (it can be the existing $4.99 Price). Without both, Stripe is "not configured" and the site shows "Pro coming soon" with a waitlist link.
+ * - Yearly shows only when STRIPE_PRO_YEARLY_PRICE_ID is set. Display price: NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS (default 7900).
  * - Lifetime shows only when STRIPE_PRO_LIFETIME_PRICE_ID is set. One-time Checkout (mode "payment").
- *   Display price: NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS (default 3900).
+ *   Display price: NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS (default 7900).
  */
 
 export type PlanId = "monthly" | "yearly" | "lifetime";
@@ -28,10 +28,10 @@ export type PlanConfig = {
   plans: PlanOption[];
 };
 
-export const DEFAULT_MONTHLY_CENTS = 399;
-export const DEFAULT_YEARLY_CENTS = 2900;
-export const DEFAULT_LIFETIME_CENTS = 3900;
-export const LIFETIME_BADGE = "Launch lifetime deal, limited";
+export const DEFAULT_MONTHLY_CENTS = 499;
+export const DEFAULT_YEARLY_CENTS = 3900;
+export const DEFAULT_LIFETIME_CENTS = 7900;
+export const LIFETIME_BADGE = "Pay once, no renewals";
 
 /** Customer metadata key that marks a paid lifetime purchase. Value is the PaymentIntent id. */
 export const LIFETIME_METADATA_KEY = "makeqr_pro_lifetime";

@@ -2,8 +2,7 @@
  * Which Stripe Price new Pro checkouts charge. Pure, so it can be unit-tested.
  *
  * Only STRIPE_PRO_PRICE_ID is read. The legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID is
- * deliberately ignored: it pointed at the old $4.99 Price, and the site now shows
- * a different price. With STRIPE_PRO_PRICE_ID (or STRIPE_SECRET_KEY) unset, Pro is
+ * deliberately ignored so the charged Price is always set explicitly on the server. With STRIPE_PRO_PRICE_ID (or STRIPE_SECRET_KEY) unset, Pro is
  * "coming soon" and checkout refuses to start, so nobody is charged.
  */
 type Env = Record<string, string | undefined>;
