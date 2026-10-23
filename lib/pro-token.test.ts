@@ -75,10 +75,11 @@ describe("pro cookie", () => {
 });
 
 describe("price config", () => {
-  it("defaults to $5.00 and formats whole dollars without cents", () => {
-    assert.equal(getProPriceCents(), 500);
-    assert.equal(formatProPrice(), "$5");
-    assert.equal(proPriceAmount(), "5.00");
+  it("defaults to the approved $3.99 and formats whole dollars without cents", () => {
+    assert.equal(getProPriceCents(), 399);
+    assert.equal(formatProPrice(), "$3.99");
+    assert.equal(proPriceAmount(), "3.99");
+    assert.equal(formatProPrice(500), "$5");
     assert.equal(formatProPrice(499), "$4.99");
     assert.equal(proPriceAmount(499), "4.99");
   });
@@ -87,7 +88,7 @@ describe("price config", () => {
     process.env.NEXT_PUBLIC_PRO_PRICE_CENTS = "499";
     assert.equal(getProPriceCents(), 499);
     process.env.NEXT_PUBLIC_PRO_PRICE_CENTS = "nope";
-    assert.equal(getProPriceCents(), 500);
+    assert.equal(getProPriceCents(), 399);
   });
 });
 

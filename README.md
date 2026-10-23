@@ -35,7 +35,7 @@ Set these in `.env.local` and in the Vercel project (**Production**, and **Previ
 | `STRIPE_WEBHOOK_SECRET` | server | Signing secret for `POST /api/stripe/webhook`. |
 | `PRO_COOKIE_SECRET` | server | HMAC secret for the `qr_pro` httpOnly cookie. At least 16 characters; use `openssl rand -base64 32`. |
 | `NEXT_PUBLIC_APP_URL` | public | Origin for Checkout and Billing Portal return URLs, e.g. `https://makeqr.pro`. |
-| `NEXT_PUBLIC_PRO_PRICE_CENTS` | public | Price shown in the UI and Offer structured data, in US cents. `500` is `$5`. Must match the Stripe Price. Requires a rebuild. |
+| `NEXT_PUBLIC_PRO_PRICE_CENTS` | public | Price shown in the UI and Offer structured data, in US cents. `399` (the default) is `$3.99`. Must match the Stripe Price. Requires a rebuild. |
 
 Checkout fails closed if `STRIPE_SECRET_KEY` or the price id is missing. Pro stays off if `PRO_COOKIE_SECRET` is missing.
 
@@ -45,7 +45,7 @@ Checkout fails closed if `STRIPE_SECRET_KEY` or the price id is missing. Pro sta
 2. The success URL calls `/api/verify-session`, which loads the Checkout Session and its Subscription. A signed httpOnly cookie (`qr_pro`) is set only when the subscription is `active` or `trialing`.
 3. The browser asks `/api/pro` on load and about once an hour. The cookie is trusted for one hour, then the server retrieves that subscription from Stripe and replaces or clears the cookie. Returning from the billing portal forces a fresh check.
 4. **Cancel at period end** keeps Pro until Stripe flips the subscription off `active`. **Canceled, unpaid, incomplete, or paused** subscriptions lose Pro on the next check. There is no localStorage flag.
-5. **Restore** (`POST /api/restore`) looks up Stripe Customers by email and sets the same cookie when one of them has an entitled subscription. Any Price qualifies, so existing **$4.99** subscribers keep Pro after new sales move to **$5**. This trusts the email until real accounts exist; it is rate-limited per IP and email on a best-effort basis.
+5. **Restore** (`POST /api/restore`) looks up Stripe Customers by email and sets the same cookie when one of them has an entitled subscription. Any Price qualifies, so existing **$4.99** subscribers keep Pro after new sales move to **$3.99**. This trusts the email until real accounts exist; it is rate-limited per IP and email on a best-effort basis.
 6. **Manage billing** opens the Stripe Customer Portal for the customer id in the cookie.
 7. **Webhooks** verify `Stripe-Signature` with `STRIPE_WEBHOOK_SECRET`. Subscription updates are not stored locally — the next `/api/pro` read sees them. `charge.dispute.created` and `radar.early_fraud_warning.created` set Customer metadata `makeqr_pro_block`, which blocks the cookie and restore. `charge.refunded` is acknowledged and does not by itself remove Pro; cancel the subscription when a refund should end access.
 
@@ -55,8 +55,8 @@ The cookie is a pointer to a Stripe subscription, not a second billing system. A
 
 Do these before pointing production at this build. Do not delete or migrate the current $4.99 Price.
 
-1. Open the existing Pro Product. Add a new recurring **$5 / month** Price. Leave the **$4.99** Price active so current subscriptions renew at $4.99.
-2. Copy the new Price id into `STRIPE_PRO_PRICE_ID`. Set `NEXT_PUBLIC_PRO_PRICE_CENTS` to `500`.
+1. Open the existing Pro Product. Add a new recurring **$3.99 / month** Price. Leave the **$4.99** Price active so current subscriptions renew at $4.99.
+2. Copy the new Price id into `STRIPE_PRO_PRICE_ID`. Set `NEXT_PUBLIC_PRO_PRICE_CENTS` to `399`.
 3. Developers → Webhooks → add endpoint `https://makeqr.pro/api/stripe/webhook`. Subscribe to:
    - `checkout.session.completed`
    - `checkout.session.async_payment_succeeded`

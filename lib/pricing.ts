@@ -1,9 +1,10 @@
 /**
  * Public Pro price. Checkout charges whatever STRIPE_PRO_PRICE_ID costs;
  * this value is only the number shown in the UI and Offer structured data.
- * Set NEXT_PUBLIC_PRO_PRICE_CENTS=500 for $5.00. Changing it requires a rebuild.
+ * Defaults to 399 ($3.99/mo, approved by Jason 2026-10-23). Set
+ * NEXT_PUBLIC_PRO_PRICE_CENTS to override. Changing it requires a rebuild.
  */
-const DEFAULT_PRO_PRICE_CENTS = 500;
+const DEFAULT_PRO_PRICE_CENTS = 399;
 
 export function getProPriceCents(): number {
   const raw = process.env.NEXT_PUBLIC_PRO_PRICE_CENTS;
@@ -15,7 +16,7 @@ export function getProPriceCents(): number {
   return cents;
 }
 
-/** "$5" when whole dollars, otherwise "$4.99". */
+/** "$5" when whole dollars, otherwise "$3.99". */
 export function formatProPrice(cents = getProPriceCents()): string {
   const sign = cents < 0 ? "-" : "";
   const abs = Math.abs(cents);
@@ -25,7 +26,7 @@ export function formatProPrice(cents = getProPriceCents()): string {
   return `${sign}$${body}`;
 }
 
-/** Schema.org Offer price, always two decimals ("5.00"). */
+/** Schema.org Offer price, always two decimals ("3.99"). */
 export function proPriceAmount(cents = getProPriceCents()): string {
   return (Math.abs(cents) / 100).toFixed(2);
 }
