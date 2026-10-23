@@ -1,9 +1,9 @@
 import { PRO_PRICE } from "@/lib/pricing";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/site";
+import AdsLoader from "@/components/AdsLoader";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -73,12 +73,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         {children}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8175259221220756"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        {/* AdSense loads only after the server confirms this browser is not Pro. */}
+        <AdsLoader />
       </body>
     </html>
   );

@@ -96,7 +96,9 @@ export default function PrivacyPage() {
               We use <strong>Google AdSense</strong> (publisher ID:{" "}
               <code className="bg-gray-100 px-1 rounded text-sm">ca-pub-8175259221220756</code>) to
               display advertisements on MakeQR Pro. Google AdSense uses cookies and web beacons to
-              serve ads based on your prior visits to this and other websites.
+              serve ads based on your prior visits to this and other websites. The AdSense script is
+              only loaded after our server confirms a browser is not on Pro. Pro users (monthly, yearly,
+              or lifetime) don&apos;t load it at all.
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
