@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { PRO_BLOCK_METADATA_KEY } from "@/lib/pro-access";
+import { grantLifetimeFromSession, PRO_BLOCK_METADATA_KEY, revokeLifetimeForRefund } from "@/lib/pro-access";
 import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -16,6 +16,8 @@ function chargeIdOf(value: string | Stripe.Charge | null | undefined): string | 
  * Subscription changes take effect the next time /api/pro re-checks Stripe
  * (within an hour, or immediately after the billing portal return).
  * Disputes and early-fraud warnings set Customer metadata that those checks honor.
+ * Lifetime (one-time) purchases are recorded on the Customer as metadata when the
+ * Checkout Session is paid, and cleared again if that payment is fully refunded.
  */
 async function blockCustomerForCharge(stripe: Stripe, chargeId: string, reason: string) {
   const charge = await stripe.charges.retrieve(chargeId);
@@ -50,8 +52,11 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
+        break;
       case "checkout.session.completed":
       case "checkout.session.async_payment_succeeded":
+        // Subscriptions need nothing here. Lifetime payments are recorded on the Customer.
+        await grantLifetimeFromSession(stripe, event.data.object);
         break;
       case "charge.dispute.created":
       case "radar.early_fraud_warning.created": {
@@ -63,8 +68,9 @@ export async function POST(req: NextRequest) {
         break;
       }
       case "charge.refunded":
-        // A refund does not by itself end the subscription. Access follows
-        // subscription status on the next server re-check.
+        // A refund does not by itself end a subscription; access follows subscription
+        // status on the next re-check. A full refund of a lifetime payment ends lifetime Pro.
+        await revokeLifetimeForRefund(stripe, event.data.object);
         break;
       default:
         break;

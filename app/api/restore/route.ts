@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeEmail } from "@/lib/email";
-import { claimsForSubscription, findEntitledSubscription } from "@/lib/pro-access";
+import {
+  claimsForLifetime,
+  claimsForSubscription,
+  customerHasLifetime,
+  findEntitledSubscription,
+} from "@/lib/pro-access";
 import { withProCookie } from "@/lib/pro-cookie";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { getStripe } from "@/lib/stripe";
@@ -34,6 +39,9 @@ export async function POST(req: NextRequest) {
     const stripe = getStripe();
     const customers = await stripe.customers.list({ email, limit: 10 });
     for (const customer of customers.data) {
+      if (customerHasLifetime(customer)) {
+        return withProCookie(NextResponse.json({ pro: true }), claimsForLifetime(customer.id));
+      }
       const subscription = await findEntitledSubscription(stripe, customer.id);
       if (!subscription) continue;
       const claims = claimsForSubscription(subscription, customer.id);
@@ -41,7 +49,7 @@ export async function POST(req: NextRequest) {
       return withProCookie(NextResponse.json({ pro: true }), claims);
     }
     return NextResponse.json(
-      { pro: false, error: "No active subscription found for that email." },
+      { pro: false, error: "No active Pro plan found for that email." },
       { status: 404 },
     );
   } catch (err) {

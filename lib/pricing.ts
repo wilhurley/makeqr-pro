@@ -5,15 +5,27 @@
  * NEXT_PUBLIC_PRO_PRICE_CENTS to override. Changing it requires a rebuild.
  */
 const DEFAULT_PRO_PRICE_CENTS = 399;
+/** Yearly ($29) and lifetime ($39 one-time) display prices. Only shown when their Stripe Price ids are set. */
+const DEFAULT_PRO_YEARLY_PRICE_CENTS = 2900;
+const DEFAULT_PRO_LIFETIME_PRICE_CENTS = 3900;
+
+function centsFromEnv(raw: string | undefined, fallback: number): number {
+  if (raw === undefined || raw.trim() === "") return fallback;
+  const cents = Number(raw);
+  if (!Number.isInteger(cents) || cents < 0 || cents > 1_000_000) return fallback;
+  return cents;
+}
 
 export function getProPriceCents(): number {
-  const raw = process.env.NEXT_PUBLIC_PRO_PRICE_CENTS;
-  if (raw === undefined || raw.trim() === "") return DEFAULT_PRO_PRICE_CENTS;
-  const cents = Number(raw);
-  if (!Number.isInteger(cents) || cents < 0 || cents > 1_000_000) {
-    return DEFAULT_PRO_PRICE_CENTS;
-  }
-  return cents;
+  return centsFromEnv(process.env.NEXT_PUBLIC_PRO_PRICE_CENTS, DEFAULT_PRO_PRICE_CENTS);
+}
+
+export function getProYearlyPriceCents(): number {
+  return centsFromEnv(process.env.NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS, DEFAULT_PRO_YEARLY_PRICE_CENTS);
+}
+
+export function getProLifetimePriceCents(): number {
+  return centsFromEnv(process.env.NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS, DEFAULT_PRO_LIFETIME_PRICE_CENTS);
 }
 
 /** "$5" when whole dollars, otherwise "$3.99". */
@@ -33,3 +45,5 @@ export function proPriceAmount(cents = getProPriceCents()): string {
 
 /** Display price for copy, e.g. "$3.99". Set via NEXT_PUBLIC_PRO_PRICE_CENTS at build time. */
 export const PRO_PRICE = formatProPrice();
+export const PRO_YEARLY_PRICE = formatProPrice(getProYearlyPriceCents());
+export const PRO_LIFETIME_PRICE = formatProPrice(getProLifetimePriceCents());

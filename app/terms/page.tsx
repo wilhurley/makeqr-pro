@@ -1,4 +1,4 @@
-import { PRO_PRICE } from "@/lib/pricing";
+import { PRO_LIFETIME_PRICE, PRO_PRICE, PRO_YEARLY_PRICE } from "@/lib/pricing";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -55,6 +55,11 @@ export default function TermsPage() {
               <a href={`mailto:${SUPPORT_EMAIL}`} className="text-indigo-600">{SUPPORT_EMAIL}</a>.
               Canceling stops the next renewal. Unless the law requires it, we don&apos;t refund a month that has already started.
               See the <Link href="/refund" className="text-indigo-600">refund &amp; cancellation policy</Link>.
+            </p>
+            <p className="mt-3">
+              When checkout offers them, Pro is also available yearly ({PRO_YEARLY_PRICE} per year, renews each year until you cancel)
+              or as a one-time lifetime purchase ({PRO_LIFETIME_PRICE}, a limited launch deal). Lifetime has no renewals and keeps Pro on
+              for as long as MakeQR Pro is offered. A dispute, chargeback, or refund of that payment ends lifetime Pro.
             </p>
             <p className="mt-2">
               We don&apos;t store your full card number. Stripe does. There isn&apos;t a separate MakeQR account or password. When checkout succeeds, Pro unlocks in the browser you used, and the server re-checks your subscription with Stripe. On another device, or after clearing site data, use Restore with the email from your Stripe receipt. Email us if you already paid and need a hand.

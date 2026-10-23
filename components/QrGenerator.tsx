@@ -1,6 +1,15 @@
 "use client";
 import { PRO_PRICE } from "@/lib/pricing";
 
+type PublicPlan = { id: "monthly" | "yearly" | "lifetime"; price: string; per: string; badge?: string };
+type PlansState = { configured: boolean; plans: PublicPlan[] };
+
+const WAITLIST_HREF =
+  "mailto:support@ridgelineapps.us?subject=" +
+  encodeURIComponent("MakeQR Pro waitlist") +
+  "&body=" +
+  encodeURIComponent("Please let me know when MakeQR Pro is available.");
+
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
@@ -58,7 +67,8 @@ export default function QrGenerator({
   const [isPro, setIsPro]         = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [logoFile, setLogoFile]   = useState<string | null>(null);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [plans, setPlans] = useState<PlansState | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
   const [billingLoading, setBillingLoading] = useState(false);
   const [restoreEmail, setRestoreEmail] = useState("");
@@ -69,6 +79,25 @@ export default function QrGenerator({
   const [bulkLoading, setBulkLoading] = useState(false);
 
   const proLocked = !FREE_TYPES.includes(type) && !isPro;
+  // null while loading. "Pro coming soon" only once the server says Stripe is not configured.
+  const proComingSoon = plans !== null && !plans.configured;
+  const upgradeLabel = proComingSoon ? "Pro coming soon" : `Upgrade ${PRO_PRICE}/mo`;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/plans", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        if (data && typeof data.configured === "boolean" && Array.isArray(data.plans)) {
+          setPlans({ configured: data.configured, plans: data.plans as PublicPlan[] });
+        } else {
+          setPlans({ configured: false, plans: [] });
+        }
+      })
+      .catch(() => { if (!cancelled) setPlans({ configured: false, plans: [] }); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Pro comes from a signed httpOnly cookie that the server re-checks against Stripe.
   useEffect(() => {
@@ -182,21 +211,25 @@ export default function QrGenerator({
     setType(t.id);
   };
 
-  const startCheckout = async () => {
-    setCheckoutLoading(true);
+  const startCheckout = async (plan: PublicPlan["id"]) => {
+    setCheckoutLoading(plan);
     setCheckoutError("");
     try {
-      const res  = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const res  = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+        return;
+      }
+      if (data.comingSoon) {
+        setPlans({ configured: false, plans: [] });
         return;
       }
       setCheckoutError(typeof data.error === "string" ? data.error : "Could not start checkout.");
     } catch {
       setCheckoutError("Could not start checkout.");
     } finally {
-      setCheckoutLoading(false);
+      setCheckoutLoading(null);
     }
   };
 
@@ -311,13 +344,15 @@ export default function QrGenerator({
               </button>
             ) : (
               <div className="flex items-center gap-2">
-                <button onClick={() => setShowUpgrade(true)}
-                  className="text-xs font-semibold text-indigo-600 hover:underline">
-                  Restore
-                </button>
+                {!proComingSoon && (
+                  <button onClick={() => setShowUpgrade(true)}
+                    className="text-xs font-semibold text-indigo-600 hover:underline">
+                    Restore
+                  </button>
+                )}
                 <button onClick={() => setShowUpgrade(true)}
                   className="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:opacity-90 transition">
-                  Upgrade {PRO_PRICE}/mo
+                  {upgradeLabel}
                 </button>
               </div>
             )}
@@ -489,12 +524,14 @@ export default function QrGenerator({
                 </button>
               </div>
               {proLocked && (
-                <p className="text-center text-xs text-indigo-600 mt-2">This code type is part of Pro ({PRO_PRICE}/mo).</p>
+                <p className="text-center text-xs text-indigo-600 mt-2">
+                  {proComingSoon ? "This code type is part of Pro, coming soon." : `This code type is part of Pro (${PRO_PRICE}/mo).`}
+                </p>
               )}
               {!isPro && (
                 <button onClick={() => setShowUpgrade(true)}
                   className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition">
-                  Upgrade to Pro — {PRO_PRICE}/mo
+                  {proComingSoon ? "Pro coming soon" : `Upgrade to Pro — ${PRO_PRICE}/mo`}
                 </button>
               )}
               <p className="text-center text-xs text-gray-400 mt-2">Free for links and text · No watermark · No signup</p>
@@ -524,14 +561,42 @@ export default function QrGenerator({
                 </div>
               ))}
             </div>
-            <button onClick={startCheckout} disabled={checkoutLoading}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-2xl hover:opacity-90 disabled:opacity-50 transition text-lg">
-              {checkoutLoading ? "Opening checkout..." : `Get Pro — ${PRO_PRICE} / month`}
-            </button>
-            {checkoutError && <p className="text-center text-xs text-red-500 mt-2">{checkoutError}</p>}
-            <p className="text-center text-xs text-gray-400 mt-3">Cancel anytime · Secure checkout via Stripe</p>
-            <form onSubmit={(e) => { e.preventDefault(); void restorePro(); }} className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Already subscribed?</p>
+            {plans === null ? (
+              <button disabled
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-2xl opacity-50 text-lg">
+                Loading plans...
+              </button>
+            ) : !plans.configured ? (
+              <>
+                <a href={WAITLIST_HREF}
+                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-2xl hover:opacity-90 transition text-lg">
+                  Pro coming soon · Join the waitlist
+                </a>
+                <p className="text-center text-xs text-gray-400 mt-3">
+                  Email <a href={WAITLIST_HREF} className="underline">support@ridgelineapps.us</a> and we&apos;ll tell you when Pro opens. Free codes work now.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {plans.plans.map((plan) => (
+                    <button key={plan.id} onClick={() => void startCheckout(plan.id)} disabled={checkoutLoading !== null}
+                      className={`w-full font-bold py-3.5 rounded-2xl hover:opacity-90 disabled:opacity-50 transition ${plan.id === "monthly" ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-lg" : "border-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300"}`}>
+                      {checkoutLoading === plan.id ? "Opening checkout..." : `Get Pro — ${plan.price} ${plan.per}`}
+                      {plan.badge && <span className="block text-xs font-semibold opacity-80 mt-0.5">{plan.badge}</span>}
+                    </button>
+                  ))}
+                </div>
+                {checkoutError && <p className="text-center text-xs text-red-500 mt-2">{checkoutError}</p>}
+                <p className="text-center text-xs text-gray-400 mt-3">
+                  {plans.plans.some((plan) => plan.id === "lifetime")
+                    ? "Subscriptions cancel anytime · Lifetime is a one-time payment · Secure checkout via Stripe"
+                    : "Cancel anytime · Secure checkout via Stripe"}
+                </p>
+              </>
+            )}
+            {plans?.configured && <form onSubmit={(e) => { e.preventDefault(); void restorePro(); }} className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Already have Pro?</p>
               <p className="text-xs text-gray-500 mb-2">
                 Enter the email from your Stripe receipt to turn Pro back on in this browser.
               </p>
@@ -550,7 +615,7 @@ export default function QrGenerator({
                 </button>
               </div>
               {restoreMessage && <p className="text-xs text-red-500 mt-2">{restoreMessage}</p>}
-            </form>
+            </form>}
           </div>
         </div>
       )}

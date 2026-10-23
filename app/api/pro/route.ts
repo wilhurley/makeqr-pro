@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { claimsForSubscription, customerIdOf, customerIsBlocked } from "@/lib/pro-access";
+import {
+  claimsForLifetime,
+  claimsForSubscription,
+  customerHasLifetime,
+  customerIdOf,
+  customerIsBlocked,
+} from "@/lib/pro-access";
 import { withProCookie, withoutProCookie } from "@/lib/pro-cookie";
-import { claimsNeedRefresh, isEntitledStatus, PRO_COOKIE_NAME, verifyProToken } from "@/lib/pro-token";
+import {
+  claimsNeedRefresh,
+  isEntitledStatus,
+  isLifetimeClaims,
+  PRO_COOKIE_NAME,
+  verifyProToken,
+} from "@/lib/pro-token";
 import { getStripe, isMissingResource } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -27,6 +39,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const stripe = getStripe();
+    if (isLifetimeClaims(claims)) {
+      // Lifetime never expires; it only ends on a dispute, fraud warning or full refund.
+      const customer = await stripe.customers.retrieve(claims.cus);
+      if (!customerHasLifetime(customer)) {
+        return withoutProCookie(NextResponse.json({ pro: false }));
+      }
+      return withProCookie(NextResponse.json({ pro: true }), claimsForLifetime(claims.cus));
+    }
     const subscription = await stripe.subscriptions.retrieve(claims.sub);
     const customerId = customerIdOf(subscription.customer) ?? claims.cus;
     if (!isEntitledStatus(subscription.status)) {

@@ -6,11 +6,15 @@ export const PRO_COOKIE_TTL_SECONDS = 60 * 60 * 24 * 14;
 /** How long a signed cookie is trusted before we ask Stripe again. */
 export const PRO_REVALIDATE_AFTER_MS = 60 * 60 * 1000;
 
-const ENTITLED_STATUSES = new Set(["active", "trialing"]);
+/** `sub` and `st` used in the cookie for lifetime buyers. There is no subscription to point at. */
+export const LIFETIME_SUB = "lifetime";
+export const LIFETIME_STATUS = "lifetime";
+
+const ENTITLED_STATUSES = new Set(["active", "trialing", LIFETIME_STATUS]);
 
 export type ProClaims = {
   v: 1;
-  /** Stripe subscription id */
+  /** Stripe subscription id, or "lifetime" for a one-time lifetime purchase */
   sub: string;
   /** Stripe customer id */
   cus: string;
@@ -45,6 +49,10 @@ export function issueClaims(input: {
     iat: now,
     exp: Math.floor(now / 1000) + PRO_COOKIE_TTL_SECONDS,
   };
+}
+
+export function isLifetimeClaims(claims: Pick<ProClaims, "sub">): boolean {
+  return claims.sub === LIFETIME_SUB;
 }
 
 export function claimsNeedRefresh(claims: ProClaims, now = Date.now()): boolean {
@@ -84,7 +92,7 @@ export function verifyProToken(token: string): ProClaims | null {
   try {
     const parsed = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Partial<ProClaims>;
     if (parsed.v !== 1 || typeof parsed.sub !== "string" || typeof parsed.cus !== "string") return null;
-    if (!parsed.sub.startsWith("sub_") || !parsed.cus.startsWith("cus_")) return null;
+    if (!(parsed.sub.startsWith("sub_") || parsed.sub === LIFETIME_SUB) || !parsed.cus.startsWith("cus_")) return null;
     if (typeof parsed.st !== "string" || typeof parsed.pe !== "number") return null;
     if (typeof parsed.iat !== "number" || typeof parsed.exp !== "number") return null;
     return parsed as ProClaims;

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { claimsForSubscription, customerIdOf, customerIsBlocked } from "@/lib/pro-access";
+import {
+  claimsForLifetime,
+  claimsForSubscription,
+  customerIdOf,
+  customerIsBlocked,
+  grantLifetimeFromSession,
+} from "@/lib/pro-access";
 import { withProCookie } from "@/lib/pro-cookie";
 import { isEntitledStatus } from "@/lib/pro-token";
 import { getStripe } from "@/lib/stripe";
@@ -30,6 +36,13 @@ export async function GET(req: NextRequest) {
     });
     if (session.status !== "complete" || session.payment_status === "unpaid") {
       return NextResponse.json({ valid: false });
+    }
+
+    if (session.mode === "payment") {
+      // Lifetime: one-time payment. Record it on the Customer (webhook does the same).
+      const lifetimeCustomer = await grantLifetimeFromSession(stripe, session);
+      if (!lifetimeCustomer) return NextResponse.json({ valid: false });
+      return withProCookie(NextResponse.json({ valid: true }), claimsForLifetime(lifetimeCustomer));
     }
 
     const subscription = await resolveSubscription(stripe, session.subscription);

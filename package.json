@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --experimental-default-type=module --test lib/pro-token.test.ts"
+    "test": "node --experimental-strip-types --experimental-default-type=module --test lib/pro-token.test.ts lib/plans.test.ts"
   },
   "dependencies": {
     "@stripe/stripe-js": "^8.10.0",
