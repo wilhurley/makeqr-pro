@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteFooter } from "@/components/SiteFooter";
+import { pageMetadata, SUPPORT_EMAIL } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | MakeQR Pro",
-  description:
-    "Privacy Policy for MakeQR Pro — learn how we collect, use, and protect your data.",
-  alternates: { canonical: "https://makeqr.pro/privacy" },
-  robots: { index: true, follow: true },
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Privacy Policy",
+  description: "Privacy Policy for MakeQR Pro — learn how we collect, use, and protect your data.",
+  path: "/privacy",
+});
 
-const LAST_UPDATED = "March 19, 2026";
-const CONTACT_EMAIL = "privacy@makeqr.pro";
+const LAST_UPDATED = "October 22, 2026";
+const CONTACT_EMAIL = SUPPORT_EMAIL;
 const SITE_URL = "https://makeqr.pro";
 
 export default function PrivacyPage() {
@@ -37,8 +37,8 @@ export default function PrivacyPage() {
 
           <section>
             <p>
-              MakeQR Pro (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), operated by ARC Technologies LLC,
-              is committed to protecting your privacy. This Privacy Policy explains what information we
+              MakeQR Pro (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), operated by Ridgeline Apps LLC
+              in Wheelersburg, Ohio, is committed to protecting your privacy. This Privacy Policy explains what information we
               collect when you use <a href={SITE_URL} className="text-indigo-600">{SITE_URL}</a> (the
               &quot;Service&quot;), how we use it, and your rights regarding that information.
             </p>
@@ -96,7 +96,9 @@ export default function PrivacyPage() {
               We use <strong>Google AdSense</strong> (publisher ID:{" "}
               <code className="bg-gray-100 px-1 rounded text-sm">ca-pub-8175259221220756</code>) to
               display advertisements on MakeQR Pro. Google AdSense uses cookies and web beacons to
-              serve ads based on your prior visits to this and other websites.
+              serve ads based on your prior visits to this and other websites. The AdSense script is
+              only loaded after our server confirms a browser is not on Pro. Pro users (monthly, yearly,
+              or lifetime) don&apos;t load it at all.
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
@@ -150,7 +152,12 @@ export default function PrivacyPage() {
               >
                 Privacy Policy
               </a>
-              . We receive only a Stripe customer ID and subscription status.
+              . We receive a Stripe customer ID and subscription status (or a lifetime purchase marker kept
+              on your Stripe customer record) and keep them in a signed
+              httpOnly cookie so this browser can stay in sync with Stripe. The browser that completed
+              checkout also gets a second signed cookie that lets it open the Stripe billing portal. We do not run a separate
+              account database. If you restore Pro on another device, the email you enter is sent to
+              Stripe to look up an active subscription or lifetime purchase and is not stored on our servers.
             </p>
           </section>
 
@@ -190,7 +197,9 @@ export default function PrivacyPage() {
                 <tbody>
                   <tr>
                     <td className="p-3 border border-gray-200">Essential</td>
-                    <td className="p-3 border border-gray-200">Session management, security</td>
+                    <td className="p-3 border border-gray-200">
+                      Session management, security, and the signed Pro subscription cookie
+                    </td>
                   </tr>
                   <tr className="bg-gray-50">
                     <td className="p-3 border border-gray-200">Preference</td>
@@ -295,7 +304,8 @@ export default function PrivacyPage() {
               If you have questions or concerns about this Privacy Policy, please contact:
             </p>
             <div className="bg-gray-50 rounded-lg p-4 mt-3 text-sm">
-              <p className="font-medium text-gray-900">ARC Technologies LLC</p>
+              <p className="font-medium text-gray-900">Ridgeline Apps LLC</p>
+              <p>Wheelersburg, Ohio</p>
               <p>
                 Email:{" "}
                 <a href={`mailto:${CONTACT_EMAIL}`} className="text-indigo-600">
@@ -307,6 +317,7 @@ export default function PrivacyPage() {
           </section>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }
