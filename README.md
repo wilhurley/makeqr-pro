@@ -31,22 +31,23 @@ Set these in `.env.local` and in the Vercel project (**Production**, and **Previ
 | --- | --- | --- |
 | `STRIPE_SECRET_KEY` | server | Stripe API key. A restricted key is enough. |
 | `STRIPE_PRO_PRICE_ID` | server | Price id used for **new** Checkout sessions. |
-| `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | public | Legacy fallback if `STRIPE_PRO_PRICE_ID` is unset. Do not add new uses. |
+| `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | — | **Ignored.** It pointed at the old $4.99 Price. Checkout never falls back to it; without `STRIPE_PRO_PRICE_ID` Pro is "coming soon" and nobody is charged. Remove it from Vercel. |
+| `STRIPE_BILLING_PORTAL_LOGIN_URL` | server | Optional. Your Stripe customer-portal login link (`https://billing.stripe.com/p/login/...`). Browsers that restored Pro by email are sent here for Manage billing; Stripe emails the customer a code. |
 | `STRIPE_WEBHOOK_SECRET` | server | Signing secret for `POST /api/stripe/webhook`. |
 | `PRO_COOKIE_SECRET` | server | HMAC secret for the `qr_pro` httpOnly cookie. At least 16 characters; use `openssl rand -base64 32`. |
 | `NEXT_PUBLIC_APP_URL` | public | Origin for Checkout and Billing Portal return URLs, e.g. `https://makeqr.pro`. |
 | `NEXT_PUBLIC_PRO_PRICE_CENTS` | public | Price shown in the UI and Offer structured data, in US cents. `500` is `$5`. Must match the Stripe Price. Requires a rebuild. |
 
-Checkout fails closed if `STRIPE_SECRET_KEY` or the price id is missing. Pro stays off if `PRO_COOKIE_SECRET` is missing.
+Checkout fails closed (HTTP 503 `comingSoon`, no charge) if `STRIPE_SECRET_KEY` or `STRIPE_PRO_PRICE_ID` is missing. Pro stays off if `PRO_COOKIE_SECRET` is missing.
 
 ## How Pro works
 
 1. **Upgrade** creates a Stripe Checkout subscription session for `STRIPE_PRO_PRICE_ID` and redirects to Stripe.
-2. The success URL calls `/api/verify-session`, which loads the Checkout Session and its Subscription. A signed httpOnly cookie (`qr_pro`) is set only when the subscription is `active` or `trialing`.
+2. The success URL calls `/api/verify-session`, which loads the Checkout Session and its Subscription. A signed httpOnly cookie (`qr_pro`) is set only when the subscription is `active` or `trialing`, plus a separate billing cookie (`qr_billing`, 30 days, sliding) because the Checkout Session id proves this browser made the purchase. If verification fails (non-2xx, `valid: false`, or a network error) the page keeps the session id and shows **Try again**; reloads and the hourly check retry too.
 3. The browser asks `/api/pro` on load and about once an hour. The cookie is trusted for one hour, then the server retrieves that subscription from Stripe and replaces or clears the cookie. Returning from the billing portal forces a fresh check.
 4. **Cancel at period end** keeps Pro until Stripe flips the subscription off `active`. **Canceled, unpaid, incomplete, or paused** subscriptions lose Pro on the next check. There is no localStorage flag.
-5. **Restore** (`POST /api/restore`) looks up Stripe Customers by email and sets the same cookie when one of them has an entitled subscription. Any Price qualifies, so existing **$4.99** subscribers keep Pro after new sales move to **$5**. This trusts the email until real accounts exist; it is rate-limited per IP and email on a best-effort basis.
-6. **Manage billing** opens the Stripe Customer Portal for the customer id in the cookie.
+5. **Restore** (`POST /api/restore`) looks up Stripe Customers by email and sets the same cookie when one of them has an entitled subscription. Any Price qualifies, so existing **$4.99** subscribers keep Pro after new sales move to **$5**. The lookup is case-insensitive (Stripe's `customers.list` email filter is case-sensitive, so it also uses the typed form and Stripe Search). Restore unlocks Pro features only. It never sets `qr_billing`, because knowing an email does not prove owning it. It is rate-limited per IP and email on a best-effort basis.
+6. **Manage billing** opens the Stripe Customer Portal for the customer in `qr_billing`, and still shows when Pro has lapsed (past_due/unpaid) so the customer can fix the card or cancel. Without `qr_billing` (e.g. after an email restore) it redirects to `STRIPE_BILLING_PORTAL_LOGIN_URL` if set. Both cookies reject expired claims on the server, not only via browser `Max-Age`.
 7. **Webhooks** verify `Stripe-Signature` with `STRIPE_WEBHOOK_SECRET`. Subscription updates are not stored locally — the next `/api/pro` read sees them. `charge.dispute.created` and `radar.early_fraud_warning.created` set Customer metadata `makeqr_pro_block`, which blocks the cookie and restore. `charge.refunded` is acknowledged and does not by itself remove Pro; cancel the subscription when a refund should end access.
 
 The cookie is a pointer to a Stripe subscription, not a second billing system. A modified client can still hide the upgrade UI; server routes will not treat a forged cookie as paid.

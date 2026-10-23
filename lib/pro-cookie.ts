@@ -1,5 +1,14 @@
 import { NextResponse } from "next/server";
-import { PRO_COOKIE_NAME, PRO_COOKIE_TTL_SECONDS, signProToken, type ProClaims } from "./pro-token";
+import {
+  BILLING_COOKIE_NAME,
+  BILLING_COOKIE_TTL_SECONDS,
+  PRO_COOKIE_NAME,
+  PRO_COOKIE_TTL_SECONDS,
+  signBillingToken,
+  signProToken,
+  type BillingClaims,
+  type ProClaims,
+} from "./pro-token";
 
 function cookieOptions(maxAge = PRO_COOKIE_TTL_SECONDS) {
   return {
@@ -18,5 +27,15 @@ export function withProCookie(res: NextResponse, claims: ProClaims) {
 
 export function withoutProCookie(res: NextResponse) {
   res.cookies.set(PRO_COOKIE_NAME, "", cookieOptions(0));
+  return res;
+}
+
+export function withBillingCookie(res: NextResponse, claims: BillingClaims) {
+  res.cookies.set(BILLING_COOKIE_NAME, signBillingToken(claims), cookieOptions(BILLING_COOKIE_TTL_SECONDS));
+  return res;
+}
+
+export function withoutBillingCookie(res: NextResponse) {
+  res.cookies.set(BILLING_COOKIE_NAME, "", cookieOptions(0));
   return res;
 }

@@ -151,7 +151,8 @@ export default function PrivacyPage() {
                 Privacy Policy
               </a>
               . We receive a Stripe customer ID and subscription status and keep them in a signed
-              httpOnly cookie so this browser can stay in sync with Stripe. We do not run a separate
+              httpOnly cookie so this browser can stay in sync with Stripe. The browser that completed
+              checkout also gets a second signed cookie that lets it open the Stripe billing portal. We do not run a separate
               account database. If you restore Pro on another device, the email you enter is sent to
               Stripe to look up an active subscription and is not stored on our servers.
             </p>

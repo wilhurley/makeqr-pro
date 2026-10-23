@@ -14,12 +14,21 @@ export async function POST(req: NextRequest) {
     email = null;
   }
 
+  // Never fall back to the legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ($4.99 Price).
+  const priceId = getProPriceId();
+  if (!priceId) {
+    return NextResponse.json(
+      { comingSoon: true, error: "Pro is coming soon. You have not been charged." },
+      { status: 503 },
+    );
+  }
+
   try {
     const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       ...(email ? { customer_email: email } : {}),
-      line_items: [{ price: getProPriceId(), quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${getAppUrl()}/?pro=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${getAppUrl()}/?pro=cancel`,
       metadata: { source: "makeqr.pro" },

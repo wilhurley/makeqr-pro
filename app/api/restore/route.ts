@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeEmail } from "@/lib/email";
+import { findCustomersByEmail, normalizeEmail } from "@/lib/email";
 import { claimsForSubscription, findEntitledSubscription } from "@/lib/pro-access";
 import { withProCookie } from "@/lib/pro-cookie";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
@@ -11,13 +11,14 @@ export const dynamic = "force-dynamic";
 const WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
-  let email: string | null = null;
+  let rawEmail: unknown = null;
   try {
     const body = await req.json();
-    email = normalizeEmail(body && typeof body === "object" && "email" in body ? body.email : null);
+    rawEmail = body && typeof body === "object" && "email" in body ? body.email : null;
   } catch {
-    email = null;
+    rawEmail = null;
   }
+  const email = normalizeEmail(rawEmail);
   if (!email) {
     return NextResponse.json({ pro: false, error: "Enter a valid email address." }, { status: 400 });
   }
@@ -32,13 +33,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const stripe = getStripe();
-    const customers = await stripe.customers.list({ email, limit: 10 });
-    for (const customer of customers.data) {
+    // Case-insensitive: Checkout may have stored "Ada@Example.com".
+    const customers = await findCustomersByEmail(stripe, rawEmail);
+    for (const customer of customers) {
       const subscription = await findEntitledSubscription(stripe, customer.id);
       if (!subscription) continue;
       const claims = claimsForSubscription(subscription, customer.id);
       if (!claims) continue;
-      return withProCookie(NextResponse.json({ pro: true }), claims);
+      // Restore proves only that someone knows the email, so it unlocks Pro features
+      // on this browser but never billing access (no qr_billing cookie). Managing
+      // billing from a restored browser goes through Stripe's emailed sign-in link.
+      return withProCookie(NextResponse.json({ pro: true, billing: false }), claims);
     }
     return NextResponse.json(
       { pro: false, error: "No active subscription found for that email." },
