@@ -7,8 +7,8 @@ import {
   customerIsBlocked,
   grantLifetimeFromSession,
 } from "@/lib/pro-access";
-import { withProCookie } from "@/lib/pro-cookie";
-import { isEntitledStatus } from "@/lib/pro-token";
+import { withBillingCookie, withProCookie } from "@/lib/pro-cookie";
+import { isEntitledStatus, issueBillingClaims } from "@/lib/pro-token";
 import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -42,7 +42,8 @@ export async function GET(req: NextRequest) {
       // Lifetime: one-time payment. Record it on the Customer (webhook does the same).
       const lifetimeCustomer = await grantLifetimeFromSession(stripe, session);
       if (!lifetimeCustomer) return NextResponse.json({ valid: false });
-      return withProCookie(NextResponse.json({ valid: true }), claimsForLifetime(lifetimeCustomer));
+      const res = withProCookie(NextResponse.json({ valid: true, billing: true }), claimsForLifetime(lifetimeCustomer));
+      return withBillingCookie(res, issueBillingClaims(lifetimeCustomer));
     }
 
     const subscription = await resolveSubscription(stripe, session.subscription);
@@ -59,7 +60,10 @@ export async function GET(req: NextRequest) {
     const claims = claimsForSubscription(subscription, customerId);
     if (!claims) return NextResponse.json({ valid: false });
 
-    return withProCookie(NextResponse.json({ valid: true }), claims);
+    // The Checkout Session id only reaches the buyer's browser, so it proves this
+    // browser may manage billing. Email restore never issues this cookie.
+    const res = withProCookie(NextResponse.json({ valid: true, billing: true }), claims);
+    return withBillingCookie(res, issueBillingClaims(customerId));
   } catch (err) {
     console.error("verify-session failed", err instanceof Error ? err.message : "unknown");
     return NextResponse.json({ valid: false }, { status: 500 });

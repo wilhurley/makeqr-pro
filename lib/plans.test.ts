@@ -40,9 +40,11 @@ describe("plan config", () => {
     assert.deepEqual(config.plans.map((p) => [p.id, p.cents, p.mode]), [["monthly", 399, "subscription"]]);
   });
 
-  it("accepts the legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID", () => {
-    const config = planConfig({ STRIPE_SECRET_KEY: "sk", NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: "price_legacy" });
-    assert.equal(findPlan(config, "monthly")?.priceId, "price_legacy");
+  it("never falls back to the legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID (old $4.99 Price)", () => {
+    const legacyOnly = planConfig({ STRIPE_SECRET_KEY: "sk", NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: "price_legacy" });
+    assert.deepEqual(legacyOnly, { configured: false, plans: [] }, "coming soon, no charge");
+    const both = planConfig({ ...BASE, NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: "price_legacy" });
+    assert.equal(findPlan(both, "monthly")?.priceId, "price_month");
   });
 
   it("adds yearly ($29) and lifetime ($39, one-time) only when their price ids are set", () => {
@@ -120,7 +122,7 @@ describe("lifetime cookie", () => {
     try {
       const now = 1_700_000_000_000;
       const claims = issueClaims({ sub: LIFETIME_SUB, cus: "cus_1", status: LIFETIME_STATUS, periodEnd: 0, now });
-      const parsed = verifyProToken(signProToken(claims));
+      const parsed = verifyProToken(signProToken(claims), now + 1_000);
       assert.ok(parsed);
       assert.equal(isLifetimeClaims(parsed), true);
       assert.equal(isEntitledStatus(parsed.st), true);

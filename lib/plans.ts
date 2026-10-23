@@ -4,8 +4,8 @@
  *
  * Approved prices (Jason, 2026-10-23): $3.99/mo, $29/yr, $39 lifetime (launch deal, first 300).
  *
- * - Monthly needs STRIPE_PRO_PRICE_ID (or the legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID) and STRIPE_SECRET_KEY.
- *   Without both, Stripe is "not configured" and the site shows "Pro coming soon" with a waitlist link.
+ * - Monthly needs STRIPE_PRO_PRICE_ID and STRIPE_SECRET_KEY. The legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
+ *   (the old $4.99 Price) is never used, so a $3.99 display can't charge $4.99. Without both, Stripe is "not configured" and the site shows "Pro coming soon" with a waitlist link.
  * - Yearly shows only when STRIPE_PRO_YEARLY_PRICE_ID is set. Display price: NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS (default 2900).
  * - Lifetime shows only when STRIPE_PRO_LIFETIME_PRICE_ID is set. One-time Checkout (mode "payment").
  *   Display price: NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS (default 3900).
@@ -55,7 +55,8 @@ export function isPlanId(value: unknown): value is PlanId {
 
 export function planConfig(env: Env = process.env): PlanConfig {
   const secret = clean(env.STRIPE_SECRET_KEY);
-  const monthly = clean(env.STRIPE_PRO_PRICE_ID) || clean(env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID);
+  // No fallback to NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: unset means "Pro coming soon", never a charge.
+  const monthly = clean(env.STRIPE_PRO_PRICE_ID);
   if (!secret || !monthly) return { configured: false, plans: [] };
   const plans: PlanOption[] = [
     {

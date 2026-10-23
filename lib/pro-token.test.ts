@@ -3,10 +3,15 @@ import { afterEach, describe, it } from "node:test";
 import { normalizeEmail } from "./email.ts";
 import { formatProPrice, getProPriceCents, proPriceAmount } from "./pricing.ts";
 import {
+  BILLING_COOKIE_TTL_SECONDS,
   claimsNeedRefresh,
+  issueBillingClaims,
   issueClaims,
   isEntitledStatus,
+  PRO_COOKIE_TTL_SECONDS,
+  signBillingToken,
   signProToken,
+  verifyBillingToken,
   verifyProToken,
 } from "./pro-token.ts";
 
@@ -38,10 +43,11 @@ describe("pro cookie", () => {
       now: 1_700_000_000_000,
     });
     const token = signProToken(claims);
-    assert.deepEqual(verifyProToken(token), claims);
+    const now = 1_700_000_000_000 + 1_000;
+    assert.deepEqual(verifyProToken(token, now), claims);
 
     const tampered = `${token.slice(0, -1)}${token.endsWith("a") ? "b" : "a"}`;
-    assert.equal(verifyProToken(tampered), null);
+    assert.equal(verifyProToken(tampered, now), null);
     assert.equal(verifyProToken("not-a-token"), null);
     assert.equal(verifyProToken(""), null);
   });
@@ -52,6 +58,19 @@ describe("pro cookie", () => {
       issueClaims({ sub: "sub_123", cus: "cus_123", status: "active", periodEnd: 0, now: 1_700_000_000_000 }),
     );
     process.env.PRO_COOKIE_SECRET = "a-different-secret-value";
+    assert.equal(verifyProToken(token, 1_700_000_000_000), null);
+  });
+
+  it("rejects a correctly signed token once exp has passed", () => {
+    process.env.PRO_COOKIE_SECRET = SECRET;
+    const issuedAt = 1_700_000_000_000;
+    const claims = issueClaims({ sub: "sub_123", cus: "cus_123", status: "active", periodEnd: 0, now: issuedAt });
+    const token = signProToken(claims);
+    const expiresAt = issuedAt + PRO_COOKIE_TTL_SECONDS * 1000;
+    assert.deepEqual(verifyProToken(token, expiresAt - 1), claims, "valid just before exp");
+    assert.equal(verifyProToken(token, expiresAt), null, "rejected at exp");
+    assert.equal(verifyProToken(token, expiresAt + 86_400_000), null, "rejected after exp");
+    // Real clock: a token issued in 2023 is long expired.
     assert.equal(verifyProToken(token), null);
   });
 
@@ -71,6 +90,29 @@ describe("pro cookie", () => {
       true,
     );
     assert.equal(claimsNeedRefresh({ ...fresh, st: "canceled" }, now), true);
+  });
+});
+
+describe("billing cookie", () => {
+  it("round-trips, expires, and is not interchangeable with the Pro cookie", () => {
+    process.env.PRO_COOKIE_SECRET = SECRET;
+    const issuedAt = 1_700_000_000_000;
+    const billing = issueBillingClaims("cus_123", issuedAt);
+    const token = signBillingToken(billing);
+    const expiresAt = issuedAt + BILLING_COOKIE_TTL_SECONDS * 1000;
+    assert.deepEqual(verifyBillingToken(token, issuedAt + 1), billing);
+    assert.equal(verifyBillingToken(token, expiresAt), null);
+
+    // A Pro token (which email restore can issue) never authorizes billing, and vice versa.
+    const pro = signProToken(issueClaims({ sub: "sub_1", cus: "cus_123", status: "active", periodEnd: 0, now: issuedAt }));
+    assert.equal(verifyBillingToken(pro, issuedAt + 1), null);
+    assert.equal(verifyProToken(token, issuedAt + 1), null);
+  });
+
+  it("rejects billing claims for a non-customer id", () => {
+    process.env.PRO_COOKIE_SECRET = SECRET;
+    const token = signBillingToken({ ...issueBillingClaims("cus_1", 1_700_000_000_000), cus: "acct_1" });
+    assert.equal(verifyBillingToken(token, 1_700_000_000_001), null);
   });
 });
 

@@ -10,16 +10,16 @@ const WAITLIST_HREF =
   "&body=" +
   encodeURIComponent("Please let me know when MakeQR Pro is available.");
 
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
+import { activationSucceeded, PENDING_SESSION_KEY, pendingSessionId } from "@/lib/activation";
+import { isFreeType, previewAllowed, typeForEntitlement, type QRType } from "@/lib/qr-types";
 
-export type QRType = "url" | "text" | "email" | "phone" | "sms" | "wifi" | "vcard";
+export type { QRType };
 
 interface WifiData { ssid: string; password: string; encryption: string; }
 interface VCardData { name: string; phone: string; email: string; company: string; website: string; }
-
-const FREE_TYPES: QRType[] = ["url", "text"];
 
 const TABS: { id: QRType; label: string; icon: string; pro?: boolean }[] = [
   { id: "url",   label: "URL",     icon: "🔗" },
@@ -71,6 +71,10 @@ export default function QrGenerator({
   const [plans, setPlans] = useState<PlansState | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
   const [billingLoading, setBillingLoading] = useState(false);
+  const [canManageBilling, setCanManageBilling] = useState(false);
+  const [billingMessage, setBillingMessage] = useState("");
+  const [activationState, setActivationState] = useState<"idle" | "working" | "failed">("idle");
+  const wasPro = useRef(false);
   const [restoreEmail, setRestoreEmail] = useState("");
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState("");
@@ -78,7 +82,7 @@ export default function QrGenerator({
   const [bulkText, setBulkText]   = useState("https://example.com\nhttps://site2.com\nhttps://site3.com");
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  const proLocked = !FREE_TYPES.includes(type) && !isPro;
+  const proLocked = !isFreeType(type) && !isPro;
   // null while loading. "Pro coming soon" only once the server says Stripe is not configured.
   const proComingSoon = plans !== null && !plans.configured;
   const upgradeLabel = proComingSoon ? "Pro coming soon" : `Upgrade ${PRO_PRICE}/mo`;
@@ -99,6 +103,58 @@ export default function QrGenerator({
     return () => { cancelled = true; };
   }, []);
 
+  // Apply a Free/Pro answer from the server. When Pro is revoked (was Pro, now Free)
+  // a selected paid type drops back to URL. A free visitor who lands on a Pro page
+  // (e.g. /qr-code-for/wifi) keeps the locked type, but proLocked blocks the preview
+  // and every export.
+  const applyEntitlement = useCallback((pro: boolean, billing: boolean) => {
+    if (!pro && wasPro.current) setType((current) => typeForEntitlement(current, false));
+    wasPro.current = pro;
+    setIsPro(pro);
+    setCanManageBilling(billing);
+  }, []);
+
+  // Verify a Checkout return. The session id is kept (URL + localStorage) until the
+  // server confirms it, so a failure can be retried instead of leaving a payer on Free.
+  const activateCheckout = useCallback(async (): Promise<void> => {
+    const sessionId = pendingSessionId(window.location.search, localStorage.getItem(PENDING_SESSION_KEY));
+    if (!sessionId) return;
+    localStorage.setItem(PENDING_SESSION_KEY, sessionId);
+    setActivationState("working");
+    let ok = false;
+    try {
+      const res = await fetch(`/api/verify-session?session_id=${encodeURIComponent(sessionId)}`);
+      const body = await res.json().catch(() => null);
+      ok = activationSucceeded(res, body);
+    } catch {
+      ok = false;
+    }
+    if (ok) {
+      localStorage.removeItem(PENDING_SESSION_KEY);
+      window.history.replaceState({}, "", window.location.pathname);
+      setActivationState("idle");
+    } else {
+      setActivationState("failed");
+    }
+  }, []);
+
+  const refreshPro = useCallback(async (fresh: boolean): Promise<boolean | null> => {
+    try {
+      const res = await fetch(fresh ? "/api/pro?fresh=1" : "/api/pro");
+      const data = await res.json();
+      const pro = Boolean(data.pro);
+      applyEntitlement(pro, Boolean(data.billing));
+      if (pro) {
+        // Already active (for example a retry in another tab worked).
+        localStorage.removeItem(PENDING_SESSION_KEY);
+        setActivationState("idle");
+      }
+      return pro;
+    } catch {
+      return null;
+    }
+  }, [applyEntitlement]);
+
   // Pro comes from a signed httpOnly cookie that the server re-checks against Stripe.
   useEffect(() => {
     let cancelled = false;
@@ -107,31 +163,14 @@ export default function QrGenerator({
 
     const load = async () => {
       const params = new URLSearchParams(window.location.search);
-      const sessionId = params.get("session_id");
-      const proStatus = params.get("pro");
       const billingReturn = params.get("billing") === "return";
 
-      if (proStatus === "success" && sessionId) {
-        try {
-          await fetch(`/api/verify-session?session_id=${encodeURIComponent(sessionId)}`);
-        } catch {
-          // /api/pro below reports the cookie, if the server set one.
-        }
-        window.history.replaceState({}, "", window.location.pathname);
-      } else if (billingReturn) {
-        window.history.replaceState({}, "", window.location.pathname);
-      }
+      await activateCheckout();
+      if (billingReturn) window.history.replaceState({}, "", window.location.pathname);
+      if (cancelled) return;
 
-      try {
-        const res = await fetch(billingReturn ? "/api/pro?fresh=1" : "/api/pro");
-        const data = await res.json();
-        if (cancelled) return;
-        const pro = Boolean(data.pro);
-        setIsPro(pro);
-        if (legacyPro && !pro) setShowRestoreHint(true);
-      } catch {
-        if (!cancelled && legacyPro) setShowRestoreHint(true);
-      }
+      const pro = await refreshPro(billingReturn);
+      if (!cancelled && legacyPro && pro !== true) setShowRestoreHint(true);
     };
 
     void load();
@@ -140,7 +179,12 @@ export default function QrGenerator({
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [activateCheckout, refreshPro]);
+
+  const retryActivation = async () => {
+    await activateCheckout();
+    await refreshPro(true);
+  };
 
   const buildQrData = useCallback((): string => {
     switch (type) {
@@ -195,13 +239,20 @@ export default function QrGenerator({
   }, []);
 
   useEffect(() => {
+    // Free visitors on a Pro type (landing pages like /qr-code-for/wifi, or right after
+    // Pro is revoked) get no QR image at all: a preview could be scanned or saved,
+    // bypassing the guarded PNG/copy buttons.
+    if (!previewAllowed(type, isPro)) { setQrDataUrl(""); return; }
     const data = buildQrData();
     if (!data) { setQrDataUrl(""); return; }
+    let stale = false;
     const effectiveSize = isPro ? size : Math.min(size, 512);
     generateQR(data, effectiveSize, fgColor, bgColor, isPro ? logoFile : null)
-      .then(setQrDataUrl)
-      .catch(() => setQrDataUrl(""));
-  }, [buildQrData, fgColor, bgColor, size, logoFile, isPro, generateQR]);
+      .then((url) => { if (!stale) setQrDataUrl(url); })
+      .catch(() => { if (!stale) setQrDataUrl(""); });
+    // A slow render that started while Pro was on must not land after a revoke.
+    return () => { stale = true; };
+  }, [buildQrData, type, fgColor, bgColor, size, logoFile, isPro, generateQR]);
 
   const handleTabClick = (t: typeof TABS[0]) => {
     if (t.pro && !isPro) {
@@ -235,12 +286,20 @@ export default function QrGenerator({
 
   const openBillingPortal = async () => {
     setBillingLoading(true);
+    setBillingMessage("");
     try {
       const res = await fetch("/api/billing-portal", { method: "POST" });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setBillingLoading(false);
-    } catch { setBillingLoading(false); }
+      // url: our portal session. loginUrl: Stripe's emailed sign-in, for browsers
+      // that restored Pro by email and so have no billing cookie.
+      const next = typeof data.url === "string" ? data.url : typeof data.loginUrl === "string" ? data.loginUrl : "";
+      if (next) { window.location.href = next; return; }
+      setBillingMessage(typeof data.error === "string" ? data.error : "Could not open billing.");
+      setBillingLoading(false);
+    } catch {
+      setBillingMessage("Could not open billing. Try again.");
+      setBillingLoading(false);
+    }
   };
 
   const restorePro = async () => {
@@ -254,7 +313,7 @@ export default function QrGenerator({
       });
       const data = await res.json();
       if (data.pro) {
-        setIsPro(true);
+        applyEntitlement(true, canManageBilling || Boolean(data.billing));
         setShowUpgrade(false);
         setShowRestoreHint(false);
         setRestoreMessage("");
@@ -337,12 +396,13 @@ export default function QrGenerator({
           </Link>
           <div className="flex items-center gap-3">
             <p className="text-xs text-gray-500 hidden sm:block">No signup · No watermark</p>
-            {isPro ? (
+            {(isPro || canManageBilling) && (
               <button onClick={openBillingPortal} disabled={billingLoading}
                 className="text-xs border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition">
                 {billingLoading ? "Opening..." : "Manage billing"}
               </button>
-            ) : (
+            )}
+            {!isPro && (
               <div className="flex items-center gap-2">
                 {!proComingSoon && (
                   <button onClick={() => setShowUpgrade(true)}
@@ -358,9 +418,25 @@ export default function QrGenerator({
             )}
           </div>
         </div>
+        {billingMessage && (
+          <p className="max-w-5xl mx-auto px-4 pb-2 text-right text-xs text-red-500">{billingMessage}</p>
+        )}
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-8">
+        {activationState !== "idle" && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 flex flex-wrap items-center gap-3">
+            {activationState === "working"
+              ? <span>Activating Pro...</span>
+              : <>
+                  <span className="flex-1">We could not confirm your Pro purchase yet. If you were charged, nothing is lost: try again in a moment.</span>
+                  <button onClick={() => { void retryActivation(); }}
+                    className="rounded-lg bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 hover:opacity-90">
+                    Try again
+                  </button>
+                </>}
+          </div>
+        )}
         {showRestoreHint && !isPro && (
           <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center gap-3">
             <p className="flex-1">
@@ -504,7 +580,7 @@ export default function QrGenerator({
                     <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                     </svg>
-                    <span className="text-sm">Enter content above</span>
+                    <span className="text-sm text-center px-3">{proLocked ? "Preview is part of Pro" : "Enter content above"}</span>
                   </div>
                 )}
               </div>
@@ -542,7 +618,7 @@ export default function QrGenerator({
 
       {showUpgrade && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowUpgrade(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-md w-full p-6 relative" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-md w-full p-6 relative max-h-[calc(100dvh-2rem)] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowUpgrade(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">×</button>
             <div className="text-center mb-6">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">Q</div>
