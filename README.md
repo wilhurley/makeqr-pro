@@ -88,4 +88,12 @@ That March deployment's source is the **Vercel CLI**, not a Git build. Pushes to
 
 Do not change DNS. `/about` and `/qr-code-best-practices` are normal App Router pages; a clean `npm run build` emits them, and the next production deploy of current `main` will serve them.
 
-On-site legal copy still names ARC Technologies LLC. This README does not change that.
+On-site copy names Ridgeline Apps LLC (Wheelersburg, Ohio) as the publisher.
+
+## Dynamic QR codes (Pro)
+
+- `/dynamic` is the dashboard. A dynamic code encodes `https://makeqr.pro/r/<slug>`; `/r/<slug>` 302-redirects with `Cache-Control: no-store` and bumps a scan counter.
+- Owner is the Stripe customer id in the signed `qr_pro` cookie (no separate accounts). Creating and editing need active Pro. After Pro lapses the redirect keeps working and editing is locked.
+- Storage: Upstash Redis via REST (`KV_REST_API_URL`, `KV_REST_API_TOKEN`). No migrations; keys are `dq:<slug>` (hash), `dq:own:<cus>` (set), `rl:dq:*` (rate-limit counters). Local dev without these uses an in-memory store.
+- Abuse limits: http(s) only (no `javascript:`/`data:`/`file:`), no credentials in URLs, no localhost/private IPs, no makeqr.pro loops, 2,048 chars max; 20 creates/hour per customer, 30/hour per IP, 120 edits/hour, 500 codes per customer.
+- To kill an abusive code: delete the `dq:<slug>` key in the Upstash console.
