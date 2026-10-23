@@ -1,3 +1,4 @@
+import { PRO_PRICE } from "@/lib/pricing";
 export type QrTab = "url" | "text" | "wifi" | "vcard";
 
 export type UseCaseSection = {
@@ -34,7 +35,7 @@ export const USE_CASES: UseCase[] = [
     h1: "WiFi QR code generator",
     intro:
       "Enter the network name and password, download the code, and guests can join from their camera.",
-    proNote: "WiFi codes are part of MakeQR Pro ($4.99/mo). URL and text codes are free.",
+    proNote: `WiFi codes are part of MakeQR Pro (${PRO_PRICE}/mo). URL and text codes are free.`,
     cardTitle: "WiFi",
     card: "Guests join the network from a scan. Pro.",
     sections: [
@@ -91,7 +92,7 @@ export const USE_CASES: UseCase[] = [
       {
         question: "Is the WiFi QR code free?",
         answer:
-          "No. WiFi codes are part of MakeQR Pro ($4.99/mo). URL and text codes are free, with no signup and no watermark.",
+          `No. WiFi codes are part of MakeQR Pro (${PRO_PRICE}/mo). URL and text codes are free, with no signup and no watermark.`,
       },
     ],
   },
@@ -235,7 +236,7 @@ export const USE_CASES: UseCase[] = [
       "Add a QR code to your business card that saves your name, phone, email and company straight to their contacts. Contact QR codes are part of MakeQR Pro.",
     h1: "Business card QR code",
     intro: "A contact code can save your name, phone, email, and company into someone's phone.",
-    proNote: "Contact QR codes are part of MakeQR Pro ($4.99/mo). A link to your site is free.",
+    proNote: `Contact QR codes are part of MakeQR Pro (${PRO_PRICE}/mo). A link to your site is free.`,
     cardTitle: "Business card",
     card: "Save a contact in one scan. Pro.",
     sections: [
@@ -285,7 +286,7 @@ export const USE_CASES: UseCase[] = [
       {
         question: "Is it free?",
         answer:
-          "The contact code is Pro ($4.99/mo). A URL code that opens your website is free.",
+          `The contact code is Pro (${PRO_PRICE}/mo). A URL code that opens your website is free.`,
       },
     ],
   },

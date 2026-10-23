@@ -1,23 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import type Stripe from "stripe";
+import { claimsForSubscription, customerIdOf, customerIsBlocked } from "@/lib/pro-access";
+import { withProCookie } from "@/lib/pro-cookie";
+import { isEntitledStatus } from "@/lib/pro-token";
+import { getStripe } from "@/lib/stripe";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+async function resolveSubscription(
+  stripe: Stripe,
+  value: Stripe.Checkout.Session["subscription"],
+): Promise<Stripe.Subscription | null> {
+  if (!value) return null;
+  if (typeof value === "string") return stripe.subscriptions.retrieve(value);
+  return value;
+}
 
 export async function GET(req: NextRequest) {
   const sessionId = req.nextUrl.searchParams.get("session_id");
-  if (!sessionId) {
+  if (!sessionId || !sessionId.startsWith("cs_")) {
     return NextResponse.json({ valid: false });
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: "2026-02-25.clover",
+    const stripe = getStripe();
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription"],
     });
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    const valid = session.payment_status === "paid" || session.status === "complete";
-    const email = session.customer_email || session.customer_details?.email || "";
-    return NextResponse.json({ valid, email });
-  } catch {
-    return NextResponse.json({ valid: false });
+    if (session.status !== "complete" || session.payment_status === "unpaid") {
+      return NextResponse.json({ valid: false });
+    }
+
+    const subscription = await resolveSubscription(stripe, session.subscription);
+    if (!subscription || !isEntitledStatus(subscription.status)) {
+      return NextResponse.json({ valid: false });
+    }
+
+    const customerId = customerIdOf(session.customer) ?? customerIdOf(subscription.customer);
+    if (!customerId) return NextResponse.json({ valid: false });
+
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customerIsBlocked(customer)) return NextResponse.json({ valid: false });
+
+    const claims = claimsForSubscription(subscription, customerId);
+    if (!claims) return NextResponse.json({ valid: false });
+
+    return withProCookie(NextResponse.json({ valid: true }), claims);
+  } catch (err) {
+    console.error("verify-session failed", err instanceof Error ? err.message : "unknown");
+    return NextResponse.json({ valid: false }, { status: 500 });
   }
 }

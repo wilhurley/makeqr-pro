@@ -1,3 +1,4 @@
+import { PRO_PRICE } from "@/lib/pricing";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -9,7 +10,7 @@ export const metadata: Metadata = pageMetadata({
   path: "/terms",
 });
 
-const LAST_UPDATED = "October 22, 2026";
+const LAST_UPDATED = "October 23, 2026";
 
 export default function TermsPage() {
   return (
@@ -36,7 +37,7 @@ export default function TermsPage() {
               Free includes URL and text codes, custom colors, and a PNG download, with no signup and no watermark. Free PNG goes up to 512px.
             </p>
             <p className="mt-2">
-              Pro is $4.99 per month. It adds WiFi, email, phone, SMS, and contact codes, a logo in the center, SVG download, PNG sizes up to 1024px, and bulk generation. Bulk is a list of URLs you paste, one per line, downloaded as a ZIP.
+              Pro is {PRO_PRICE} per month. It adds WiFi, email, phone, SMS, and contact codes, a logo in the center, SVG download, PNG sizes up to 1024px, and bulk generation. Bulk is a list of URLs you paste, one per line, downloaded as a ZIP.
             </p>
           </section>
 
@@ -50,12 +51,13 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">4. Pro billing and cancellation</h2>
             <p>
-              Pro is billed by Stripe, $4.99 per month, charged in advance. It renews each month until you cancel. You can cancel anytime by emailing{" "}
+              Pro is billed by Stripe, {PRO_PRICE} per month, charged in advance. It renews each month until you cancel. You can cancel anytime with the Manage billing button or by emailing{" "}
               <a href={`mailto:${SUPPORT_EMAIL}`} className="text-indigo-600">{SUPPORT_EMAIL}</a>.
               Canceling stops the next renewal. Unless the law requires it, we don&apos;t refund a month that has already started.
+              See the <Link href="/refund" className="text-indigo-600">refund &amp; cancellation policy</Link>.
             </p>
             <p className="mt-2">
-              We don&apos;t store your full card number. Stripe does. There isn&apos;t a separate MakeQR account or password. When checkout succeeds, Pro unlocks in the browser you used. Clearing that browser&apos;s saved site data can turn Pro off on that device. Email us if you already paid and need a hand.
+              We don&apos;t store your full card number. Stripe does. There isn&apos;t a separate MakeQR account or password. When checkout succeeds, Pro unlocks in the browser you used, and the server re-checks your subscription with Stripe. On another device, or after clearing site data, use Restore with the email from your Stripe receipt. Email us if you already paid and need a hand.
             </p>
           </section>
 

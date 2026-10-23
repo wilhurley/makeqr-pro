@@ -1,8 +1,9 @@
+import { PRO_PRICE } from "@/lib/pricing";
 export const HOME_FAQS: { question: string; answer: string }[] = [
   {
     question: "Is MakeQR Pro really free to use?",
     answer:
-      "Yes. URL and text QR codes, custom colors and PNG download are free with no signup and no watermark. Pro ($4.99/month) unlocks WiFi, Email, Phone, SMS and Contact codes, logo overlay, bulk generation, SVG export and sizes up to 1024px.",
+      `Yes. URL and text QR codes, custom colors and PNG download are free with no signup and no watermark. Pro (${PRO_PRICE}/month) unlocks WiFi, Email, Phone, SMS and Contact codes, logo overlay, bulk generation, SVG export and sizes up to 1024px.`,
   },
   {
     question: "Do QR codes from MakeQR Pro expire?",

@@ -1,35 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import { normalizeEmail } from "@/lib/email";
+import { getAppUrl, getProPriceId, getStripe } from "@/lib/stripe";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  let email: string | null = null;
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: "2026-02-25.clover",
-    });
-    const { email } = await req.json();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://makeqr.pro";
+    const body = await req.json();
+    email = normalizeEmail(body && typeof body === "object" && "email" in body ? body.email : null);
+  } catch {
+    email = null;
+  }
 
+  try {
+    const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
       mode: "subscription",
-      customer_email: email || undefined,
-      line_items: [
-        {
-          price: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!,
-          quantity: 1,
-        },
-      ],
-      success_url: `${appUrl}/?pro=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${appUrl}/?pro=cancel`,
+      ...(email ? { customer_email: email } : {}),
+      line_items: [{ price: getProPriceId(), quantity: 1 }],
+      success_url: `${getAppUrl()}/?pro=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${getAppUrl()}/?pro=cancel`,
       metadata: { source: "makeqr.pro" },
+      subscription_data: { metadata: { source: "makeqr.pro" } },
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (err) {
+    console.error("checkout failed", err instanceof Error ? err.message : "unknown");
+    return NextResponse.json({ error: "Could not start checkout." }, { status: 500 });
   }
 }
-

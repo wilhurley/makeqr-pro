@@ -1,4 +1,5 @@
 "use client";
+import { PRO_PRICE } from "@/lib/pricing";
 
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import Link from "next/link";
@@ -58,30 +59,58 @@ export default function QrGenerator({
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [logoFile, setLogoFile]   = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [restoreEmail, setRestoreEmail] = useState("");
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState("");
+  const [showRestoreHint, setShowRestoreHint] = useState(false);
   const [bulkText, setBulkText]   = useState("https://example.com\nhttps://site2.com\nhttps://site3.com");
   const [bulkLoading, setBulkLoading] = useState(false);
 
   const proLocked = !FREE_TYPES.includes(type) && !isPro;
 
+  // Pro comes from a signed httpOnly cookie that the server re-checks against Stripe.
   useEffect(() => {
-    const stored = localStorage.getItem("qrpro");
-    if (stored === "true") { setIsPro(true); return; }
+    let cancelled = false;
+    const legacyPro = localStorage.getItem("qrpro") === "true";
+    localStorage.removeItem("qrpro");
 
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get("session_id");
-    const proStatus = params.get("pro");
+    const load = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get("session_id");
+      const proStatus = params.get("pro");
+      const billingReturn = params.get("billing") === "return";
 
-    if (proStatus === "success" && sessionId) {
-      fetch(`/api/verify-session?session_id=${sessionId}`)
-        .then(r => r.json())
-        .then(d => {
-          if (d.valid) {
-            setIsPro(true);
-            localStorage.setItem("qrpro", "true");
-            window.history.replaceState({}, "", "/");
-          }
-        });
-    }
+      if (proStatus === "success" && sessionId) {
+        try {
+          await fetch(`/api/verify-session?session_id=${encodeURIComponent(sessionId)}`);
+        } catch {
+          // /api/pro below reports the cookie, if the server set one.
+        }
+        window.history.replaceState({}, "", window.location.pathname);
+      } else if (billingReturn) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+
+      try {
+        const res = await fetch(billingReturn ? "/api/pro?fresh=1" : "/api/pro");
+        const data = await res.json();
+        if (cancelled) return;
+        const pro = Boolean(data.pro);
+        setIsPro(pro);
+        if (legacyPro && !pro) setShowRestoreHint(true);
+      } catch {
+        if (!cancelled && legacyPro) setShowRestoreHint(true);
+      }
+    };
+
+    void load();
+    const interval = window.setInterval(() => { void load(); }, 60 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
   }, []);
 
   const buildQrData = useCallback((): string => {
@@ -155,12 +184,55 @@ export default function QrGenerator({
 
   const startCheckout = async () => {
     setCheckoutLoading(true);
+    setCheckoutError("");
     try {
       const res  = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setCheckoutError(typeof data.error === "string" ? data.error : "Could not start checkout.");
+    } catch {
+      setCheckoutError("Could not start checkout.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const openBillingPortal = async () => {
+    setBillingLoading(true);
+    try {
+      const res = await fetch("/api/billing-portal", { method: "POST" });
+      const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else setCheckoutLoading(false);
-    } catch { setCheckoutLoading(false); }
+      else setBillingLoading(false);
+    } catch { setBillingLoading(false); }
+  };
+
+  const restorePro = async () => {
+    setRestoreLoading(true);
+    setRestoreMessage("");
+    try {
+      const res = await fetch("/api/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: restoreEmail }),
+      });
+      const data = await res.json();
+      if (data.pro) {
+        setIsPro(true);
+        setShowUpgrade(false);
+        setShowRestoreHint(false);
+        setRestoreMessage("");
+      } else {
+        setRestoreMessage(data.error || "No active subscription found for that email.");
+      }
+    } catch {
+      setRestoreMessage("Could not reach the server. Try again.");
+    } finally {
+      setRestoreLoading(false);
+    }
   };
 
   const downloadPng = () => {
@@ -232,17 +304,38 @@ export default function QrGenerator({
           </Link>
           <div className="flex items-center gap-3">
             <p className="text-xs text-gray-500 hidden sm:block">No signup · No watermark</p>
-            {!isPro && (
-              <button onClick={() => setShowUpgrade(true)}
-                className="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:opacity-90 transition">
-                Upgrade $4.99/mo
+            {isPro ? (
+              <button onClick={openBillingPortal} disabled={billingLoading}
+                className="text-xs border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition">
+                {billingLoading ? "Opening..." : "Manage billing"}
               </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowUpgrade(true)}
+                  className="text-xs font-semibold text-indigo-600 hover:underline">
+                  Restore
+                </button>
+                <button onClick={() => setShowUpgrade(true)}
+                  className="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:opacity-90 transition">
+                  Upgrade {PRO_PRICE}/mo
+                </button>
+              </div>
             )}
           </div>
         </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-8">
+        {showRestoreHint && !isPro && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center gap-3">
+            <p className="flex-1">
+              Pro on this browser used to be saved only on this device. Restore it with the email from your Stripe receipt so cancellation applies here too.
+            </p>
+            <button onClick={() => setShowUpgrade(true)} className="text-sm font-semibold text-indigo-700 shrink-0">
+              Restore Pro
+            </button>
+          </div>
+        )}
         {children ?? (
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">Free QR Code Generator</h1>
@@ -396,12 +489,12 @@ export default function QrGenerator({
                 </button>
               </div>
               {proLocked && (
-                <p className="text-center text-xs text-indigo-600 mt-2">This code type is part of Pro ($4.99/mo).</p>
+                <p className="text-center text-xs text-indigo-600 mt-2">This code type is part of Pro ({PRO_PRICE}/mo).</p>
               )}
               {!isPro && (
                 <button onClick={() => setShowUpgrade(true)}
                   className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition">
-                  Upgrade to Pro — $4.99/mo
+                  Upgrade to Pro — {PRO_PRICE}/mo
                 </button>
               )}
               <p className="text-center text-xs text-gray-400 mt-2">Free for links and text · No watermark · No signup</p>
@@ -433,9 +526,31 @@ export default function QrGenerator({
             </div>
             <button onClick={startCheckout} disabled={checkoutLoading}
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-2xl hover:opacity-90 disabled:opacity-50 transition text-lg">
-              {checkoutLoading ? "Opening checkout..." : "Get Pro — $4.99 / month"}
+              {checkoutLoading ? "Opening checkout..." : `Get Pro — ${PRO_PRICE} / month`}
             </button>
+            {checkoutError && <p className="text-center text-xs text-red-500 mt-2">{checkoutError}</p>}
             <p className="text-center text-xs text-gray-400 mt-3">Cancel anytime · Secure checkout via Stripe</p>
+            <form onSubmit={(e) => { e.preventDefault(); void restorePro(); }} className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Already subscribed?</p>
+              <p className="text-xs text-gray-500 mb-2">
+                Enter the email from your Stripe receipt to turn Pro back on in this browser.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  required
+                  value={restoreEmail}
+                  onChange={(e) => setRestoreEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  className={inputClass}
+                />
+                <button type="submit" disabled={restoreLoading}
+                  className="shrink-0 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold px-4 hover:opacity-90 disabled:opacity-50">
+                  {restoreLoading ? "..." : "Restore"}
+                </button>
+              </div>
+              {restoreMessage && <p className="text-xs text-red-500 mt-2">{restoreMessage}</p>}
+            </form>
           </div>
         </div>
       )}

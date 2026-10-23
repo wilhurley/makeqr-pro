@@ -1,3 +1,4 @@
+import { proPriceAmount } from "@/lib/pricing";
 import { HOME_FAQS } from "@/lib/home-faq";
 import { COMPANY, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
 
@@ -62,11 +63,11 @@ export const homeJsonLd = {
         {
           "@type": "Offer",
           name: "Pro",
-          price: "4.99",
+          price: proPriceAmount(),
           priceCurrency: "USD",
           priceSpecification: {
             "@type": "UnitPriceSpecification",
-            price: "4.99",
+            price: proPriceAmount(),
             priceCurrency: "USD",
             billingDuration: "P1M",
             unitCode: "MON",
