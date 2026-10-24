@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const config = planConfig();
   if (!config.configured) {
     return NextResponse.json(
-      { comingSoon: true, error: "Pro is coming soon. Join the waitlist at support@ridgelineapps.us." },
+      { comingSoon: true, error: "Pro is coming soon. Join the waitlist at wil@ridgelineapps.us." },
       { status: 503 },
     );
   }

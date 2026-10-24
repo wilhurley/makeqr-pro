@@ -17,7 +17,7 @@ function needsSignIn() {
   const body = {
     error: loginUrl
       ? "Sign in to Stripe with the email on your subscription to manage billing."
-      : "Billing opens from the browser you subscribed on. For help, email support@ridgelineapps.us.",
+      : "Billing opens from the browser you subscribed on. For help, email wil@ridgelineapps.us.",
     ...(loginUrl ? { loginUrl } : {}),
   };
   return NextResponse.json(body, { status: 401 });

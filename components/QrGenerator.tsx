@@ -5,7 +5,7 @@ type PublicPlan = { id: "monthly" | "yearly" | "lifetime"; price: string; per: s
 type PlansState = { configured: boolean; plans: PublicPlan[] };
 
 const WAITLIST_HREF =
-  "mailto:support@ridgelineapps.us?subject=" +
+  "mailto:wil@ridgelineapps.us?subject=" +
   encodeURIComponent("MakeQR Pro waitlist") +
   "&body=" +
   encodeURIComponent("Please let me know when MakeQR Pro is available.");
@@ -649,7 +649,7 @@ export default function QrGenerator({
                   Pro coming soon · Join the waitlist
                 </a>
                 <p className="text-center text-xs text-gray-400 mt-3">
-                  Email <a href={WAITLIST_HREF} className="underline">support@ridgelineapps.us</a> and we&apos;ll tell you when Pro opens. Free codes work now.
+                  Email <a href={WAITLIST_HREF} className="underline">wil@ridgelineapps.us</a> and we&apos;ll tell you when Pro opens. Free codes work now.
                 </p>
               </>
             ) : (

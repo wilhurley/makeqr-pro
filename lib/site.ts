@@ -4,7 +4,7 @@ export const SITE_URL = "https://makeqr.pro";
 export const SITE_NAME = "MakeQR Pro";
 export const COMPANY = "Ridgeline Apps LLC";
 export const COMPANY_LOCATION = "Wheelersburg, Ohio";
-export const SUPPORT_EMAIL = "support@ridgelineapps.us";
+export const SUPPORT_EMAIL = "wil@ridgelineapps.us";
 export const FOUNDER = "Wil Hurley";
 
 export const OG_IMAGE = {
