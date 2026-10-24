@@ -13,7 +13,7 @@
 export const RESTORE_GENERIC_MESSAGE =
   "If that email has MakeQR Pro, we've emailed a sign-in link. It expires in 15 minutes.";
 export const RESTORE_DISABLED_MESSAGE =
-  "To manage billing, use the Stripe sign-in link; for help, email wil@ridgelineapps.us.";
+  "To manage billing, use the Stripe sign-in link; for help, email support@ridgelineapps.us.";
 
 /** Stripe Customer metadata key holding the current single-use link id. */
 export const RESTORE_JTI_METADATA_KEY = "makeqr_restore_jti";
