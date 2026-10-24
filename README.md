@@ -39,7 +39,7 @@ Set these in `.env.local` and in the Vercel project (**Production**, and **Previ
 | `NEXT_PUBLIC_PRO_PRICE_CENTS` | public | Price shown in the UI and Offer structured data, in US cents. `399` (the default) is `$3.99`. Must match the Stripe Price. Requires a rebuild. |
 | `STRIPE_PRO_YEARLY_PRICE_ID` | server | Optional. Recurring **$29 / year** Price. The yearly button only shows when this is set. |
 | `NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS` | public | Optional display price for yearly. Default `2900` = `$29`. Must match the Stripe Price. |
-| `STRIPE_PRO_LIFETIME_PRICE_ID` | server | Optional. One-time **$39** Price (not recurring). Shown as "Launch lifetime deal, limited" only when this is set. |
+| `STRIPE_PRO_LIFETIME_PRICE_ID` | server | Optional. One-time **$39** Price (not recurring). Shown as "Launch lifetime deal" only when this is set and `PRO_EXTRA_PLANS_ENABLED=on` (off at launch: monthly only). |
 | `NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS` | public | Optional display price for lifetime. Default `3900` = `$39`. Must match the Stripe Price. |
 
 **Pro coming soon:** until both `STRIPE_SECRET_KEY` and `STRIPE_PRO_PRICE_ID` are set (the legacy `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` is never used, so a $3.99 display can't charge the old $4.99 Price), every Get Pro / Upgrade button says "Pro coming soon" and links to a waitlist email (`support@ridgelineapps.us`), and `/api/checkout` returns `503 {comingSoon: true}` instead of an error. The browser reads `GET /api/plans` (no Stripe ids exposed) to decide, so turning Stripe on only needs the env vars and a redeploy. Yearly and lifetime never show without the monthly Price. Pro stays off if `PRO_COOKIE_SECRET` is missing.
@@ -64,7 +64,7 @@ Do these before pointing production at this build. Do not delete or migrate the 
 1. Open the existing Pro Product. Add a new recurring **$3.99 / month** Price. Leave the **$4.99** Price active so current subscriptions renew at $4.99.
 2. Copy the new Price id into `STRIPE_PRO_PRICE_ID`. Set `NEXT_PUBLIC_PRO_PRICE_CENTS` to `399`.
    - Optional yearly: on the same Product add a recurring **$29.00 / year** Price → `STRIPE_PRO_YEARLY_PRICE_ID` (`NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS=2900`).
-   - Optional lifetime: on the same Product add a **one-time $39.00** Price → `STRIPE_PRO_LIFETIME_PRICE_ID` (`NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS=3900`). The "limited" launch cap (first 300) is not enforced in code; remove the env var to stop selling it.
+   - Optional lifetime: on the same Product add a **one-time $39.00** Price → `STRIPE_PRO_LIFETIME_PRICE_ID` (`NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS=3900`). The "first 300" launch cap is not enforced in code, so the site does not claim a limit; leave `PRO_EXTRA_PLANS_ENABLED` off to stop selling it.
 3. Developers → Webhooks → add endpoint `https://makeqr.pro/api/stripe/webhook`. Subscribe to:
    - `checkout.session.completed`
    - `checkout.session.async_payment_succeeded`

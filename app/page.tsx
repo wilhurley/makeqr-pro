@@ -38,7 +38,7 @@ export default function HomePage() {
         <section>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Do these codes expire?</h2>
           <p className="leading-relaxed">
-            No. Whatever you type is baked into the image. There&apos;s no account holding the code, and nothing here can switch it off later. If the link changes, or you want different text, make a new code and print that one.
+            Static codes don&apos;t expire. The image keeps working as long as the link or text inside it is still valid. We don&apos;t host or redirect it. If the link changes, or you want different text, make a new code and print that one.
           </p>
         </section>
 

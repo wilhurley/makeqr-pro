@@ -84,7 +84,7 @@ export default function BestPracticesPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Static codes: keep the link stable</h2>
             <p>
-              The address you paste is the address the code opens, forever. MakeQR Pro doesn&apos;t sit in the middle, so we can&apos;t point an old code at a new page.
+              The address you paste is the address the code opens. MakeQR Pro doesn&apos;t sit in the middle, so we can&apos;t point an old code at a new page.
             </p>
             <p className="mt-2">
               Put the code on a page you control, like yoursite.com/menu or your own listing page, and update that page when the details change. The printed code can stay. If you encode a link you don&apos;t control, and that link dies, the code dies with it. You&apos;ll need a new one.

@@ -20,6 +20,7 @@ import {
 } from "./pro-token.ts";
 
 const BASE = { STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRO_PRICE_ID: "price_month" };
+const EXTRAS = { ...BASE, PRO_EXTRA_PLANS_ENABLED: "on" };
 
 describe("plan config", () => {
   it("is not configured without the secret key or the monthly price", () => {
@@ -47,12 +48,17 @@ describe("plan config", () => {
     assert.equal(findPlan(both, "monthly")?.priceId, "price_month");
   });
 
-  it("adds yearly ($29) and lifetime ($39, one-time) only when their price ids are set", () => {
-    const yearlyOnly = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year" });
+  it("stays monthly only at launch even when yearly and lifetime price ids are set", () => {
+    const config = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
+    assert.deepEqual(config.plans.map((p) => p.id), ["monthly"]);
+  });
+
+  it("adds yearly ($29) and lifetime ($39, one-time) only when enabled and their price ids are set", () => {
+    const yearlyOnly = planConfig({ ...EXTRAS, STRIPE_PRO_YEARLY_PRICE_ID: "price_year" });
     assert.deepEqual(yearlyOnly.plans.map((p) => p.id), ["monthly", "yearly"]);
     assert.equal(findPlan(yearlyOnly, "lifetime"), null);
 
-    const all = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
+    const all = planConfig({ ...EXTRAS, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
     assert.deepEqual(all.plans.map((p) => [p.id, p.cents, p.mode, p.priceId]), [
       ["monthly", 399, "subscription", "price_month"],
       ["yearly", 2900, "subscription", "price_year"],
@@ -64,7 +70,7 @@ describe("plan config", () => {
 
   it("uses the display-price env vars and ignores bad values", () => {
     const config = planConfig({
-      ...BASE,
+      ...EXTRAS,
       STRIPE_PRO_YEARLY_PRICE_ID: "price_year",
       STRIPE_PRO_LIFETIME_PRICE_ID: "price_life",
       NEXT_PUBLIC_PRO_PRICE_CENTS: "500",

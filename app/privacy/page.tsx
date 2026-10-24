@@ -5,11 +5,11 @@ import { pageMetadata, SUPPORT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
   title: "Privacy Policy",
-  description: "Privacy Policy for MakeQR Pro — learn how we collect, use, and protect your data.",
+  description: "How MakeQR Pro, run by Ridgeline Apps LLC, handles QR content, Pro purchases, cookies and ads.",
   path: "/privacy",
 });
 
-const LAST_UPDATED = "October 22, 2026";
+const LAST_UPDATED = "October 24, 2026";
 const CONTACT_EMAIL = SUPPORT_EMAIL;
 const SITE_URL = "https://makeqr.pro";
 
@@ -29,280 +29,97 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p className="text-gray-500 text-sm">
-            Last updated: {LAST_UPDATED} &nbsp;·&nbsp; Effective immediately
+            Last updated: {LAST_UPDATED}
           </p>
         </div>
 
+        {/* Text: Legal Review Bot, makeqr/PRIVACY-POLICY-DRAFT.md (Oct 24, 2026). Contact set to support@. */}
         <div className="prose prose-gray max-w-none space-y-8 text-gray-700 leading-relaxed">
-
           <section>
             <p>
-              MakeQR Pro (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), operated by Ridgeline Apps LLC
-              in Wheelersburg, Ohio, is committed to protecting your privacy. This Privacy Policy explains what information we
-              collect when you use <a href={SITE_URL} className="text-indigo-600">{SITE_URL}</a> (the
-              &quot;Service&quot;), how we use it, and your rights regarding that information.
-            </p>
-            <p className="mt-3">
-              By using MakeQR Pro you agree to the collection and use of information as described in
-              this policy.
+              MakeQR Pro (makeqr.pro) is operated by <strong>Ridgeline Apps LLC, an Ohio limited liability company</strong>,
+              Wheelersburg, Ohio (&quot;we,&quot; &quot;us&quot;). Questions: 
+              <a href={`mailto:${CONTACT_EMAIL}`} className="text-indigo-600">{CONTACT_EMAIL}</a>.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              1. Information We Collect
-            </h2>
-            <h3 className="font-medium text-gray-800 mb-2">Information you provide</h3>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">What we collect</h2>
             <ul className="list-disc pl-5 space-y-1">
-              <li>
-                <strong>QR code content</strong> — URLs, text, WiFi credentials, contact info, or
-                other data you enter to generate a QR code. This data is processed in your browser
-                and is <strong>not stored on our servers</strong>.
-              </li>
-              <li>
-                <strong>Account information</strong> (Pro subscribers only) — email address and
-                payment details collected via Stripe when you subscribe to MakeQR Pro.
-              </li>
-              <li>
-                <strong>Support communications</strong> — any messages you send to us by email.
-              </li>
-            </ul>
-
-            <h3 className="font-medium text-gray-800 mt-4 mb-2">
-              Information collected automatically
-            </h3>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>
-                <strong>Log data</strong> — IP address, browser type, pages visited, referring URL,
-                and timestamps, collected automatically by our hosting provider (Vercel).
-              </li>
-              <li>
-                <strong>Cookies &amp; local storage</strong> — small files placed on your device to
-                remember your preferences (e.g., last-used QR type, color settings). You can clear
-                these at any time through your browser settings.
-              </li>
+              <li><strong>What you type into a QR code</strong> (links, text, WiFi names and passwords, contact details) is turned into an image <strong>in your browser</strong>. We don&apos;t receive or store it.</li>
+              <li><strong>Pro purchases:</strong> Stripe collects your email and payment details. We receive your Stripe customer ID, email, plan and subscription status. We never see your full card number.</li>
+              <li><strong>Restore Pro by email:</strong> the email you type, so we can look up your Stripe purchase.</li>
+              <li><strong>Cookies:</strong> a signed cookie that remembers you&apos;re on Pro (<code>qr_pro</code>), a billing cookie (<code>qr_billing</code>), and browser storage for your color and type settings.</li>
+              <li><strong>Server logs</strong> from our hosting providers (Vercel, Cloudflare): IP address, browser type, pages requested and time, kept by those providers under their own retention policies.</li>
+              <li><strong>Email you send us.</strong></li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              2. Advertising — Google AdSense
-            </h2>
-            <p>
-              We use <strong>Google AdSense</strong> (publisher ID:{" "}
-              <code className="bg-gray-100 px-1 rounded text-sm">ca-pub-8175259221220756</code>) to
-              display advertisements on MakeQR Pro. Google AdSense uses cookies and web beacons to
-              serve ads based on your prior visits to this and other websites. The AdSense script is
-              only loaded after our server confirms a browser is not on Pro. Pro users (monthly, yearly,
-              or lifetime) don&apos;t load it at all.
-            </p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">Advertising (free pages only)</h2>
+            <p>Free pages show Google AdSense ads. Pro users don&apos;t load the ad script.</p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
-              <li>
-                Google&apos;s use of advertising cookies enables it and its partners to serve ads
-                based on your visits to our site and/or other sites on the Internet.
-              </li>
-              <li>
-                You may opt out of personalised advertising by visiting{" "}
-                <a
-                  href="https://www.google.com/settings/ads"
-                  className="text-indigo-600"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Google Ad Settings
-                </a>
-                .
-              </li>
-              <li>
-                Third-party vendors, including Google, use cookies to serve ads based on a
-                user&apos;s prior visits to our website or other websites.
-              </li>
-              <li>
-                For more information, see the{" "}
-                <a
-                  href="https://policies.google.com/privacy"
-                  className="text-indigo-600"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Google Privacy Policy
-                </a>
-                .
-              </li>
+              <li>Third-party vendors, including Google, use cookies to serve ads based on a user&apos;s prior visits to this website or other websites.</li>
+              <li>Google&apos;s use of advertising cookies enables it and its partners to serve ads to you based on your visits to this site and/or other sites on the Internet.</li>
+              <li>You can opt out of personalized advertising at <a href="https://adssettings.google.com" className="text-indigo-600" target="_blank" rel="noopener noreferrer">https://adssettings.google.com</a> or <a href="https://www.aboutads.info" className="text-indigo-600" target="_blank" rel="noopener noreferrer">www.aboutads.info</a>.</li>
+              <li>Visitors in the EEA, UK and Switzerland see ads only after the consent message from Google&apos;s certified consent tool, or non-personalized ads.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              3. Payments — Stripe
-            </h2>
-            <p>
-              Pro subscriptions are processed by <strong>Stripe</strong>. We do not store your full
-              credit card number, CVV, or billing address on our servers. All payment data is handled
-              directly by Stripe under their{" "}
-              <a
-                href="https://stripe.com/privacy"
-                className="text-indigo-600"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Privacy Policy
-              </a>
-              . We receive a Stripe customer ID and subscription status (or a lifetime purchase marker kept
-              on your Stripe customer record) and keep them in a signed
-              httpOnly cookie so this browser can stay in sync with Stripe. The browser that completed
-              checkout also gets a second signed cookie that lets it open the Stripe billing portal. We do not run a separate
-              account database. If you restore Pro on another device, the email you enter is sent to
-              Stripe to look up an active subscription or lifetime purchase and is not stored on our servers.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              4. How We Use Your Information
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">How we use information</h2>
             <ul className="list-disc pl-5 space-y-1">
-              <li>To provide and improve the QR code generation service</li>
-              <li>To process and manage Pro subscriptions</li>
-              <li>To respond to support requests</li>
-              <li>To display relevant advertisements via Google AdSense</li>
-              <li>To monitor security and prevent abuse</li>
-              <li>To comply with legal obligations</li>
+              <li>To provide the generator and Pro features.</li>
+              <li>To check and manage your subscription with Stripe.</li>
+              <li>To answer support email.</li>
+              <li>To prevent abuse.</li>
+              <li>To show ads on free pages.</li>
             </ul>
-            <p className="mt-3">
-              We do <strong>not</strong> sell, rent, or trade your personal information to any third
-              party.
-            </p>
+            <p className="mt-3">We <strong>don&apos;t sell</strong> your personal information.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              5. Cookies
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">Sharing</h2>
             <p>
-              MakeQR Pro uses the following types of cookies:
-            </p>
-            <div className="overflow-x-auto mt-3">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="text-left p-3 border border-gray-200 font-semibold">Type</th>
-                    <th className="text-left p-3 border border-gray-200 font-semibold">Purpose</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="p-3 border border-gray-200">Essential</td>
-                    <td className="p-3 border border-gray-200">
-                      Session management, security, and the signed Pro subscription cookie
-                    </td>
-                  </tr>
-                  <tr className="bg-gray-50">
-                    <td className="p-3 border border-gray-200">Preference</td>
-                    <td className="p-3 border border-gray-200">Remembering your QR settings and colour choices</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3 border border-gray-200">Advertising</td>
-                    <td className="p-3 border border-gray-200">Google AdSense personalised and non-personalised ads</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-3">
-              You can control cookies through your browser settings. Disabling cookies may affect
-              some features of the Service.
+              We share information only with the services that run the site (<a href="https://stripe.com/privacy" className="text-indigo-600" target="_blank" rel="noopener noreferrer">Stripe</a>, 
+              <a href="https://vercel.com/legal/privacy-policy" className="text-indigo-600" target="_blank" rel="noopener noreferrer">Vercel</a>, <a href="https://www.cloudflare.com/privacypolicy/" className="text-indigo-600" target="_blank" rel="noopener noreferrer">Cloudflare</a>, 
+              <a href="https://policies.google.com/privacy" className="text-indigo-600" target="_blank" rel="noopener noreferrer">Google AdSense</a> on free pages), or when the law requires it.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              6. Data Retention
-            </h2>
-            <p>
-              QR code content you enter is never stored server-side — it exists only in your browser.
-              Account data (email, subscription status) is retained for as long as your account is
-              active and for a reasonable period thereafter. Log data is retained for up to 90 days.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              7. Third-Party Services
-            </h2>
-            <p>We use the following third-party services, each governed by their own privacy policy:</p>
-            <ul className="list-disc pl-5 space-y-1 mt-2">
-              <li>
-                <a href="https://vercel.com/legal/privacy-policy" className="text-indigo-600" target="_blank" rel="noopener noreferrer">Vercel</a> — hosting and CDN
-              </li>
-              <li>
-                <a href="https://policies.google.com/privacy" className="text-indigo-600" target="_blank" rel="noopener noreferrer">Google AdSense</a> — advertising
-              </li>
-              <li>
-                <a href="https://stripe.com/privacy" className="text-indigo-600" target="_blank" rel="noopener noreferrer">Stripe</a> — payment processing
-              </li>
-              <li>
-                <a href="https://www.cloudflare.com/privacypolicy/" className="text-indigo-600" target="_blank" rel="noopener noreferrer">Cloudflare</a> — DNS and security
-              </li>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">Retention</h2>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Stripe keeps purchase records as required for payments.</li>
+              <li>We keep support email as long as needed to help you.</li>
+              <li>Cookies expire on their own (the Pro cookie within 14 days, and it&apos;s re-checked with Stripe about every hour; the billing cookie within 30 days), and you can clear them anytime.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              8. Children&apos;s Privacy
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">Your choices</h2>
             <p>
-              MakeQR Pro is not directed at children under 13. We do not knowingly collect personal
-              information from children. If you believe a child has provided us personal information,
-              please contact us and we will promptly delete it.
+              Email us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-indigo-600">{CONTACT_EMAIL}</a> to access, correct or delete information we hold, or to cancel Pro. Cancelling is also available through Manage billing.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              9. Your Rights
-            </h2>
-            <p>Depending on your location, you may have the right to:</p>
-            <ul className="list-disc pl-5 space-y-1 mt-2">
-              <li>Access the personal data we hold about you</li>
-              <li>Request correction or deletion of your data</li>
-              <li>Opt out of personalised advertising</li>
-              <li>Data portability (GDPR / CCPA where applicable)</li>
-            </ul>
-            <p className="mt-3">
-              To exercise any of these rights, email us at{" "}
-              <a href={`mailto:${CONTACT_EMAIL}`} className="text-indigo-600">
-                {CONTACT_EMAIL}
-              </a>
-              .
-            </p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">Children</h2>
+            <p>MakeQR Pro isn&apos;t directed at children under 13, and we don&apos;t knowingly collect their information.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              10. Changes to This Policy
-            </h2>
-            <p>
-              We may update this Privacy Policy from time to time. When we do, we will revise the
-              &quot;Last updated&quot; date at the top. Continued use of MakeQR Pro after changes
-              constitutes acceptance of the updated policy.
-            </p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">Changes</h2>
+            <p>We&apos;ll post changes here with a new date.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              11. Contact Us
-            </h2>
-            <p>
-              If you have questions or concerns about this Privacy Policy, please contact:
-            </p>
             <div className="bg-gray-50 rounded-lg p-4 mt-3 text-sm">
               <p className="font-medium text-gray-900">Ridgeline Apps LLC</p>
-              <p>Wheelersburg, Ohio</p>
+              <p>Wheelersburg, OH 45694</p>
               <p>
-                Email:{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} className="text-indigo-600">
-                  {CONTACT_EMAIL}
-                </a>
+                Email: 
+                <a href={`mailto:${CONTACT_EMAIL}`} className="text-indigo-600">{CONTACT_EMAIL}</a>
               </p>
               <p>Website: <a href={SITE_URL} className="text-indigo-600">{SITE_URL}</a></p>
             </div>

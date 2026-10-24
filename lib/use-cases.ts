@@ -29,10 +29,10 @@ export const USE_CASES: UseCase[] = [
     tab: "wifi",
     pro: true,
     absoluteTitle: true,
-    title: "WiFi QR Code Generator: Let Guests Join Without a Password",
+    title: "WiFi QR Code Generator (Pro): Let Guests Join Without a Password",
     description:
       "Make a QR code that connects phones to your WiFi with one scan. Enter your network name and password, download, print. WiFi codes are part of MakeQR Pro.",
-    h1: "WiFi QR code generator",
+    h1: "WiFi QR code generator (Pro)",
     intro:
       "Enter the network name and password, download the code, and guests can join from their camera.",
     proNote: `WiFi codes are part of MakeQR Pro (${PRO_PRICE}/mo). URL and text codes are free.`,
@@ -231,10 +231,10 @@ export const USE_CASES: UseCase[] = [
     tab: "vcard",
     pro: true,
     absoluteTitle: true,
-    title: "Business Card QR Code: Save Your Contact in One Scan",
+    title: "Business Card QR Code (Pro): Save Your Contact in One Scan",
     description:
       "Add a QR code to your business card that saves your name, phone, email and company straight to their contacts. Contact QR codes are part of MakeQR Pro.",
-    h1: "Business card QR code",
+    h1: "Business card QR code (Pro)",
     intro: "A contact code can save your name, phone, email, and company into someone's phone.",
     proNote: `Contact QR codes are part of MakeQR Pro (${PRO_PRICE}/mo). A link to your site is free.`,
     cardTitle: "Business card",

@@ -57,7 +57,7 @@ export default function TermsPage() {
               See the <Link href="/refund" className="text-indigo-600">refund &amp; cancellation policy</Link>.
             </p>
             <p className="mt-3">
-              When checkout offers them, Pro is also available yearly ({PRO_YEARLY_PRICE} per year, renews each year until you cancel)
+              Yearly and lifetime plans are coming soon and aren&apos;t on sale at launch. When checkout offers them, Pro is also available yearly ({PRO_YEARLY_PRICE} per year, renews each year until you cancel)
               or as a one-time lifetime purchase ({PRO_LIFETIME_PRICE}, a launch deal). Lifetime has no renewals and keeps Pro on
               for as long as MakeQR Pro is offered. A dispute, chargeback, or refund of that payment ends lifetime Pro.
             </p>

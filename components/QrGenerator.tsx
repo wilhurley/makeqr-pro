@@ -669,6 +669,9 @@ export default function QrGenerator({
                     ? "Subscriptions cancel anytime · Lifetime is a one-time payment · Secure checkout via Stripe"
                     : "Cancel anytime · Secure checkout via Stripe"}
                 </p>
+                {!plans.plans.some((plan) => plan.id === "yearly") && (
+                  <p className="text-center text-xs text-gray-400 mt-1">Yearly and lifetime plans are coming soon.</p>
+                )}
               </>
             )}
             {plans?.configured && <form onSubmit={(e) => { e.preventDefault(); void restorePro(); }} className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">

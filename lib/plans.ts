@@ -9,6 +9,9 @@
  * - Yearly shows only when STRIPE_PRO_YEARLY_PRICE_ID is set. Display price: NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS (default 2900).
  * - Lifetime shows only when STRIPE_PRO_LIFETIME_PRICE_ID is set. One-time Checkout (mode "payment").
  *   Display price: NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS (default 3900).
+ * - Launch (2026-10-25) is monthly only: yearly and lifetime are also gated on
+ *   PRO_EXTRA_PLANS_ENABLED=on, so setting their price ids alone sells nothing.
+ *   Until then the Pro dialog says they're coming soon.
  */
 
 export type PlanId = "monthly" | "yearly" | "lifetime";
@@ -67,7 +70,8 @@ export function planConfig(env: Env = process.env): PlanConfig {
       per: "/ month",
     },
   ];
-  const yearly = clean(env.STRIPE_PRO_YEARLY_PRICE_ID);
+  const extras = clean(env.PRO_EXTRA_PLANS_ENABLED).toLowerCase() === "on";
+  const yearly = extras ? clean(env.STRIPE_PRO_YEARLY_PRICE_ID) : "";
   if (yearly) {
     plans.push({
       id: "yearly",
@@ -77,7 +81,7 @@ export function planConfig(env: Env = process.env): PlanConfig {
       per: "/ year",
     });
   }
-  const lifetime = clean(env.STRIPE_PRO_LIFETIME_PRICE_ID);
+  const lifetime = extras ? clean(env.STRIPE_PRO_LIFETIME_PRICE_ID) : "";
   if (lifetime) {
     plans.push({
       id: "lifetime",

@@ -8,7 +8,7 @@ export const HOME_FAQS: { question: string; answer: string }[] = [
   {
     question: "Do QR codes from MakeQR Pro expire?",
     answer:
-      "No. They're static codes: the link or text you enter is encoded directly in the image, so there's no server in the middle that can switch them off. If the link itself changes, you'll need to make and print a new code.",
+      "Static codes don't expire. The image keeps working as long as the link or text inside it is still valid. We don't host or redirect it. If the link itself changes, you'll need to make and print a new code.",
   },
   {
     question: "How do I create a WiFi QR code?",

@@ -27,7 +27,7 @@ export default function RefundPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Who sells Pro</h2>
             <p>
               MakeQR Pro is operated by {COMPANY}, {COMPANY_LOCATION}. The free generator costs nothing. Pro is a
-              {" "}{PRO_PRICE} monthly subscription billed by Stripe. When checkout offers them, there is also a {PRO_YEARLY_PRICE}
+              {" "}{PRO_PRICE} monthly subscription billed by Stripe. Yearly and lifetime plans are coming soon. When checkout offers them, there will also be a {PRO_YEARLY_PRICE}
               {" "}yearly subscription and a {PRO_LIFETIME_PRICE} one-time lifetime purchase (launch deal).
             </p>
           </section>
