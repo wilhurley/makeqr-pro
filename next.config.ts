@@ -73,6 +73,8 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          // Legal Review 2026-10-24 §3b.1: never leak ?session_id= or a restore token in Referer.
+          { key: "Referrer-Policy", value: "no-referrer" },
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
         ],
       },
