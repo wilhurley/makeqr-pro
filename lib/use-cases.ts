@@ -171,7 +171,7 @@ export const USE_CASES: UseCase[] = [
     absoluteTitle: false,
     title: "Restaurant Menu QR Code Generator, Free",
     description:
-      "Put your menu on every table with a QR code. Paste your menu link, pick colors, download a PNG. Free, no signup, no watermark, and the code never expires.",
+      "Put your menu on every table with a QR code. Paste your menu link, pick colors, download a PNG. Free, no signup, no watermark. The code is static, so it keeps opening your menu link for as long as that link works.",
     h1: "QR code for your restaurant menu",
     intro: "Paste your menu link, pick colors, and download a PNG for the table.",
     cardTitle: "Restaurant menu",

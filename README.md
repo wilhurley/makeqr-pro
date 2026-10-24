@@ -88,4 +88,4 @@ That March deployment's source is the **Vercel CLI**, not a Git build. Pushes to
 
 Do not change DNS. `/about` and `/qr-code-best-practices` are normal App Router pages; a clean `npm run build` emits them, and the next production deploy of current `main` will serve them.
 
-On-site legal copy still names ARC Technologies LLC. This README does not change that.
+On-site legal copy (privacy, terms, refund, about, footer, schema) names Ridgeline Apps LLC.
