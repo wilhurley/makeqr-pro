@@ -88,18 +88,20 @@ function cookieSecret(): string {
   return secret;
 }
 
-/** HMAC input is prefixed per cookie type so a Pro token never verifies as a billing token. */
-function mac(purpose: "pro" | "billing", body: string): string {
+type TokenPurpose = "pro" | "billing" | "restore";
+
+/** HMAC input is prefixed per token type so a Pro token never verifies as a billing or restore token. */
+function mac(purpose: TokenPurpose, body: string): string {
   const input = purpose === "pro" ? body : `${purpose}.${body}`;
   return createHmac("sha256", cookieSecret()).update(input).digest("base64url");
 }
 
-function sign(purpose: "pro" | "billing", claims: object): string {
+function sign(purpose: TokenPurpose, claims: object): string {
   const body = Buffer.from(JSON.stringify(claims), "utf8").toString("base64url");
   return `${body}.${mac(purpose, body)}`;
 }
 
-function openToken(purpose: "pro" | "billing", token: string): Record<string, unknown> | null {
+function openToken(purpose: TokenPurpose, token: string): Record<string, unknown> | null {
   if (token.length === 0 || token.length > 4096) return null;
   const dot = token.indexOf(".");
   if (dot <= 0 || dot !== token.lastIndexOf(".")) return null;
@@ -154,4 +156,33 @@ export function verifyBillingToken(token: string, now = Date.now()): BillingClai
   if (typeof parsed.iat !== "number" || typeof parsed.exp !== "number") return null;
   if (isExpired(parsed.exp, now)) return null;
   return parsed as BillingClaims;
+}
+
+/** Magic-link restore (Legal Review 2026-10-24 §3b.2). Single use via `jti` on the Stripe Customer. */
+export const RESTORE_TOKEN_TTL_SECONDS = 15 * 60;
+
+export type RestoreClaims = {
+  v: 1;
+  k: "restore";
+  cus: string;
+  /** Random id also stored on the Customer; cleared when the link is used. */
+  jti: string;
+  exp: number;
+};
+
+export function issueRestoreClaims(cus: string, jti: string, now = Date.now()): RestoreClaims {
+  return { v: 1, k: "restore", cus, jti, exp: Math.floor(now / 1000) + RESTORE_TOKEN_TTL_SECONDS };
+}
+
+export function signRestoreToken(claims: RestoreClaims): string {
+  return sign("restore", claims);
+}
+
+export function verifyRestoreToken(token: string, now = Date.now()): RestoreClaims | null {
+  const parsed = openToken("restore", token) as Partial<RestoreClaims> | null;
+  if (!parsed) return null;
+  if (parsed.v !== 1 || parsed.k !== "restore" || typeof parsed.cus !== "string" || !parsed.cus.startsWith("cus_")) return null;
+  if (typeof parsed.jti !== "string" || parsed.jti.length < 16 || typeof parsed.exp !== "number") return null;
+  if (isExpired(parsed.exp, now)) return null;
+  return parsed as RestoreClaims;
 }

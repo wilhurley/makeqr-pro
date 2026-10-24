@@ -1,21 +1,28 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { findCustomersByEmail, normalizeEmail } from "@/lib/email";
-import {
-  claimsForLifetime,
-  claimsForSubscription,
-  customerHasLifetime,
-  findEntitledSubscription,
-} from "@/lib/pro-access";
-import { withProCookie } from "@/lib/pro-cookie";
+import { sendRestoreEmail } from "@/lib/mailer";
+import { customerHasLifetime, findEntitledSubscription } from "@/lib/pro-access";
+import { issueRestoreClaims, signRestoreToken } from "@/lib/pro-token";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { getStripe } from "@/lib/stripe";
+import { RESTORE_DISABLED, RESTORE_JTI_METADATA_KEY, requestRestoreLink, restoreEmailConfigured } from "@/lib/restore";
+import { getAppUrl, getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const WINDOW_MS = 60 * 60 * 1000;
 
+/**
+ * POST /api/restore. Legal Review 2026-10-24 §3b.2: this never reveals whether an email
+ * has Pro and never sets a cookie. With a mail sender configured it emails a single-use
+ * sign-in link; without one, restore is off (410).
+ */
 export async function POST(req: NextRequest) {
+  if (!restoreEmailConfigured(process.env)) {
+    return NextResponse.json(RESTORE_DISABLED.body, { status: RESTORE_DISABLED.status });
+  }
+
   let rawEmail: unknown = null;
   try {
     const body = await req.json();
@@ -24,45 +31,30 @@ export async function POST(req: NextRequest) {
     rawEmail = null;
   }
   const email = normalizeEmail(rawEmail);
-  if (!email) {
-    return NextResponse.json({ pro: false, error: "Enter a valid email address." }, { status: 400 });
-  }
+  const allowed = Boolean(email)
+    && rateLimit(`restore:ip:${clientIp(req.headers)}`, 8, WINDOW_MS)
+    && rateLimit(`restore:email:${email}`, 5, WINDOW_MS);
 
-  const ip = clientIp(req.headers);
-  if (!rateLimit(`restore:ip:${ip}`, 8, WINDOW_MS) || !rateLimit(`restore:email:${email}`, 5, WINDOW_MS)) {
-    return NextResponse.json(
-      { pro: false, error: "Too many restore attempts. Try again later." },
-      { status: 429 },
-    );
-  }
-
-  try {
-    const stripe = getStripe();
-    // Case-insensitive: Checkout may have stored "Ada@Example.com".
-    const customers = await findCustomersByEmail(stripe, rawEmail);
-    for (const customer of customers) {
-      if (customerHasLifetime(customer)) {
-        // Pro features only; email restore never grants billing access (no qr_billing).
-        return withProCookie(NextResponse.json({ pro: true, billing: false }), claimsForLifetime(customer.id));
+  const result = await requestRestoreLink(email, allowed, {
+    async findEntitledCustomers() {
+      const stripe = getStripe();
+      const out: { id: string; email: string | null | undefined }[] = [];
+      // Case-insensitive: Checkout may have stored "Ada@Example.com".
+      for (const customer of await findCustomersByEmail(stripe, rawEmail)) {
+        if (customerHasLifetime(customer) || (await findEntitledSubscription(stripe, customer.id))) {
+          out.push({ id: customer.id, email: customer.email });
+        }
       }
-      const subscription = await findEntitledSubscription(stripe, customer.id);
-      if (!subscription) continue;
-      const claims = claimsForSubscription(subscription, customer.id);
-      if (!claims) continue;
-      // Restore proves only that someone knows the email, so it unlocks Pro features
-      // on this browser but never billing access (no qr_billing cookie). Managing
-      // billing from a restored browser goes through Stripe's emailed sign-in link.
-      return withProCookie(NextResponse.json({ pro: true, billing: false }), claims);
-    }
-    return NextResponse.json(
-      { pro: false, error: "No active Pro plan found for that email." },
-      { status: 404 },
-    );
-  } catch (err) {
-    console.error("restore failed", err instanceof Error ? err.message : "unknown");
-    return NextResponse.json(
-      { pro: false, error: "Could not look up that subscription. Try again." },
-      { status: 500 },
-    );
-  }
+      return out;
+    },
+    async saveJti(customerId, jti) {
+      await getStripe().customers.update(customerId, { metadata: { [RESTORE_JTI_METADATA_KEY]: jti } });
+    },
+    newJti: () => randomUUID(),
+    signToken: (customerId, jti) => signRestoreToken(issueRestoreClaims(customerId, jti)),
+    sendLink: sendRestoreEmail,
+    appUrl: getAppUrl(),
+    log: (message) => console.error(message),
+  });
+  return NextResponse.json(result.body, { status: result.status });
 }

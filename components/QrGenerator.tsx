@@ -13,7 +13,7 @@ const WAITLIST_HREF =
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
-import { activationSucceeded, PENDING_SESSION_KEY, pendingSessionId } from "@/lib/activation";
+import { activationOutcome, PENDING_SESSION_KEY, pendingSessionId, scrubbedUrl } from "@/lib/activation";
 import { isFreeType, previewAllowed, typeForEntitlement, type QRType } from "@/lib/qr-types";
 
 export type { QRType };
@@ -120,21 +120,24 @@ export default function QrGenerator({
     const sessionId = pendingSessionId(window.location.search, localStorage.getItem(PENDING_SESSION_KEY));
     if (!sessionId) return;
     localStorage.setItem(PENDING_SESSION_KEY, sessionId);
+    // Legal Review §3b.1: take the session id out of the address bar right away
+    // (history, screenshots, Referer). Retries use the saved copy.
+    window.history.replaceState(null, "", scrubbedUrl(window.location.pathname, window.location.search, window.location.hash));
     setActivationState("working");
-    let ok = false;
+    let outcome: "activated" | "retry" | "drop" = "retry";
     try {
       const res = await fetch(`/api/verify-session?session_id=${encodeURIComponent(sessionId)}`);
       const body = await res.json().catch(() => null);
-      ok = activationSucceeded(res, body);
+      outcome = activationOutcome(res, body);
     } catch {
-      ok = false;
+      outcome = "retry";
     }
-    if (ok) {
-      localStorage.removeItem(PENDING_SESSION_KEY);
-      window.history.replaceState({}, "", window.location.pathname);
-      setActivationState("idle");
-    } else {
+    if (outcome === "retry") {
       setActivationState("failed");
+    } else {
+      // Activated, or already used / over an hour old (retrying can't help).
+      localStorage.removeItem(PENDING_SESSION_KEY);
+      setActivationState("idle");
     }
   }, []);
 
@@ -164,6 +167,11 @@ export default function QrGenerator({
     const load = async () => {
       const params = new URLSearchParams(window.location.search);
       const billingReturn = params.get("billing") === "return";
+      const restoreState = params.get("restore");
+      if (restoreState) {
+        window.history.replaceState(null, "", window.location.pathname);
+        if (restoreState === "expired") setBillingMessage("That sign-in link expired or was already used. Request a new one.");
+      }
 
       await activateCheckout();
       if (billingReturn) window.history.replaceState({}, "", window.location.pathname);
@@ -311,15 +319,11 @@ export default function QrGenerator({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: restoreEmail }),
       });
-      const data = await res.json();
-      if (data.pro) {
-        applyEntitlement(true, canManageBilling || Boolean(data.billing));
-        setShowUpgrade(false);
-        setShowRestoreHint(false);
-        setRestoreMessage("");
-      } else {
-        setRestoreMessage(data.error || "No active subscription found for that email.");
-      }
+      const data = await res.json().catch(() => null);
+      // Same answer whether or not the email has Pro; the sign-in link arrives by email.
+      setRestoreMessage(
+        typeof data?.message === "string" ? data.message : "Could not send a sign-in link. Try again.",
+      );
     } catch {
       setRestoreMessage("Could not reach the server. Try again.");
     } finally {
@@ -674,7 +678,7 @@ export default function QrGenerator({
             {plans?.configured && <form onSubmit={(e) => { e.preventDefault(); void restorePro(); }} className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Already have Pro?</p>
               <p className="text-xs text-gray-500 mb-2">
-                Enter the email from your Stripe receipt to turn Pro back on in this browser.
+                Enter the email from your Stripe receipt and we&apos;ll email you a one-time sign-in link.
               </p>
               <div className="flex gap-2">
                 <input
@@ -690,7 +694,7 @@ export default function QrGenerator({
                   {restoreLoading ? "..." : "Restore"}
                 </button>
               </div>
-              {restoreMessage && <p className="text-xs text-red-500 mt-2">{restoreMessage}</p>}
+              {restoreMessage && <p className="text-xs text-gray-600 dark:text-gray-300 mt-2" role="status">{restoreMessage}</p>}
             </form>}
           </div>
         </div>

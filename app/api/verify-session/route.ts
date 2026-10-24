@@ -7,6 +7,13 @@ import {
   customerIsBlocked,
   grantLifetimeFromSession,
 } from "@/lib/pro-access";
+import {
+  beginRedeem,
+  checkSessionRedeemable,
+  endRedeem,
+  redeemedMetadata,
+  SESSION_USED_OR_EXPIRED,
+} from "@/lib/checkout-guard";
 import { withBillingCookie, withProCookie } from "@/lib/pro-cookie";
 import { isEntitledStatus, issueBillingClaims } from "@/lib/pro-token";
 import { getStripe } from "@/lib/stripe";
@@ -29,6 +36,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ valid: false });
   }
 
+  if (!beginRedeem(sessionId)) {
+    return NextResponse.json(SESSION_USED_OR_EXPIRED.body, { status: SESSION_USED_OR_EXPIRED.status });
+  }
   try {
     const stripe = getStripe();
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -36,6 +46,19 @@ export async function GET(req: NextRequest) {
     });
     if (session.status !== "complete" || session.payment_status === "unpaid") {
       return NextResponse.json({ valid: false });
+    }
+
+    // Legal Review 2026-10-24 §3b.1: one-time and short-lived. A Checkout Session can
+    // mint cookies once, within 1 hour of creation. Used and expired get the same answer.
+    if (checkSessionRedeemable(session) !== "ok") {
+      return NextResponse.json(SESSION_USED_OR_EXPIRED.body, { status: SESSION_USED_OR_EXPIRED.status });
+    }
+    // Burn it before any cookie is issued. If Stripe refuses the write, fail closed.
+    try {
+      await stripe.checkout.sessions.update(session.id, { metadata: redeemedMetadata(session) });
+    } catch (err) {
+      console.error("verify-session could not mark session redeemed", err instanceof Error ? err.message : "unknown");
+      return NextResponse.json({ valid: false }, { status: 503 });
     }
 
     if (session.mode === "payment") {
@@ -60,12 +83,14 @@ export async function GET(req: NextRequest) {
     const claims = claimsForSubscription(subscription, customerId);
     if (!claims) return NextResponse.json({ valid: false });
 
-    // The Checkout Session id only reaches the buyer's browser, so it proves this
-    // browser may manage billing. Email restore never issues this cookie.
+    // The Checkout Session id only reaches the buyer's browser, and it is now burned
+    // (one use, within an hour), so it proves this browser may manage billing.
     const res = withProCookie(NextResponse.json({ valid: true, billing: true }), claims);
     return withBillingCookie(res, issueBillingClaims(customerId));
   } catch (err) {
     console.error("verify-session failed", err instanceof Error ? err.message : "unknown");
     return NextResponse.json({ valid: false }, { status: 500 });
+  } finally {
+    endRedeem(sessionId);
   }
 }
