@@ -140,11 +140,13 @@ describe("price config", () => {
     assert.equal(proPriceAmount(), "3.99");
   });
 
-  it("terms say existing subscribers keep their current price and no source hardcodes $4.99", async () => {
+  it("pricing comment says existing subscribers keep their current price and no source hardcodes $4.99", async () => {
     const { readFileSync, readdirSync, statSync } = await import("node:fs");
     const { join } = await import("node:path");
-    const terms = readFileSync(new URL("../app/terms/page.tsx", import.meta.url), "utf8");
-    assert.match(terms, /Existing subscribers keep their current price/);
+    // The Terms are now Legal Review's text word for word (C11.5: 30-day notice, applies at next renewal).
+    // The "existing subscribers keep their current price" note lives in lib/pricing.ts.
+    const pricing = readFileSync(new URL("./pricing.ts", import.meta.url), "utf8");
+    assert.match(pricing, /existing subscribers keep their\n \* current price/);
     const root = new URL("..", import.meta.url).pathname;
     const hits: string[] = [];
     const walk = (dir: string) => {
