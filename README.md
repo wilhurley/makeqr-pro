@@ -32,6 +32,9 @@ Set these in `.env.local` and in the Vercel project (**Production**, and **Previ
 | `STRIPE_SECRET_KEY` | server | Stripe API key. A restricted key is enough. |
 | `CHECKOUT_ENABLED` | server | **Default off.** Checkout only starts when this is `on`. Added 2026-10-24 for the Ridgeline test-mode launch. |
 | `STRIPE_ALLOW_LIVE` | server | Leave unset. A live key (`sk_live_`/`rk_live_`) is refused for checkout unless this is `yes` (Jason's go-live switch). |
+| `PRO_YEARLY_ENABLED` | server | **Default off.** Monthly only at launch (Legal Review 2026-10-24). Yearly is offered only when this is `on` and `STRIPE_PRO_YEARLY_PRICE_ID` is set. |
+| `PRO_LIFETIME_ENABLED` | server | **Default off.** Same for the one-time lifetime price. |
+| `STRIPE_AUTOMATIC_TAX` | server | **Default off.** `on` adds Stripe Tax to Checkout (Ohio, after Jason's vendor's license). |
 | `STRIPE_PRO_PRICE_ID` | server | Price id used for **new** Checkout sessions. |
 | `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | — | **Ignored.** It pointed at the old $4.99 Price. Checkout never falls back to it; without `STRIPE_PRO_PRICE_ID` Pro is "coming soon" and nobody is charged. Remove it from Vercel. |
 | `STRIPE_BILLING_PORTAL_LOGIN_URL` | server | Optional. Your Stripe customer-portal login link (`https://billing.stripe.com/p/login/...`). Browsers that restored Pro by email are sent here for Manage billing; Stripe emails the customer a code. |
@@ -45,6 +48,8 @@ Set these in `.env.local` and in the Vercel project (**Production**, and **Previ
 | `NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS` | public | Optional display price for lifetime. Default `3900` = `$39`. Must match the Stripe Price. |
 
 **Test mode (2026-10-24):** Checkout success returns to `/?pro=success&session_id=...` (verified server-side by `/api/verify-session`); cancel returns to `/pro/cancel`. Webhook: `POST /api/stripe/webhook`, signature checked with `STRIPE_WEBHOOK_SECRET`. Price ids come from `/workspace/stripe-setup` on the box (lookup keys `makeqr_pro_monthly`, `makeqr_pro_yearly`, `makeqr_pro_lifetime`).
+
+**Launch disclosures (Legal Review 2026-10-24):** the upgrade dialog shows "MakeQR Pro — $3.99 per month, billed monthly until you cancel." plus the cancel/refund/seller text, and an **unchecked** box "I agree to the Terms and understand this plan renews automatically every month until I cancel." Subscription buttons stay disabled until it's ticked, and `/api/checkout` returns 400 without `consent: true`. Consent time is stored in Session/Subscription metadata (`renewal_consent_at`). Cancel: the **Manage billing** button (`/api/billing-portal`, Stripe Customer Portal; turn on cancel in the Dashboard; `STRIPE_BILLING_PORTAL_LOGIN_URL` is the fallback). Statement descriptor: lifetime Checkout sets `statement_descriptor_suffix=MAKEQR`; subscription charges use the Product's `statement_descriptor` (`RIDGELINE MAKEQR`, set by `/workspace/stripe-setup`). **Existing live $4.99 subscribers are on a different (older) Stripe account. Nobody is migrated; switching `STRIPE_SECRET_KEY` to the Ridgeline account is Jason's decision.**
 
 **Pro coming soon:** until `CHECKOUT_ENABLED=on` and both `STRIPE_SECRET_KEY` and `STRIPE_PRO_PRICE_ID` are set (the legacy `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` is never used, so a $3.99 display can't charge the old $4.99 Price), every Get Pro / Upgrade button says "Pro coming soon" and links to a waitlist email (`support@ridgelineapps.us`), and `/api/checkout` returns `503 {comingSoon: true}` instead of an error. The browser reads `GET /api/plans` (no Stripe ids exposed) to decide, so turning Stripe on only needs the env vars and a redeploy. Yearly and lifetime never show without the monthly Price. Pro stays off if `PRO_COOKIE_SECRET` is missing.
 

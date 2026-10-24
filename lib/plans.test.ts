@@ -8,6 +8,9 @@ import {
   lifetimeRevokedByRefund,
   planConfig,
   checkoutAllowed,
+  automaticTaxOn,
+  renewalDisclosure,
+  STATEMENT_DESCRIPTOR_SUFFIX,
 } from "./plans.ts";
 import {
   claimsNeedRefresh,
@@ -48,12 +51,19 @@ describe("plan config", () => {
     assert.equal(findPlan(both, "monthly")?.priceId, "price_month");
   });
 
-  it("adds yearly ($29) and lifetime ($39, one-time) only when their price ids are set", () => {
-    const yearlyOnly = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year" });
+  it("is monthly only by default, even when yearly and lifetime price ids are set (Legal Review)", () => {
+    const config = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
+    assert.deepEqual(config.plans.map((p) => p.id), ["monthly"]);
+  });
+
+  it("adds yearly ($29) and lifetime ($39, one-time) only when switched on and their price ids are set", () => {
+    const ON = { PRO_YEARLY_ENABLED: "on", PRO_LIFETIME_ENABLED: "on" };
+    assert.deepEqual(planConfig({ ...BASE, ...ON }).plans.map((p) => p.id), ["monthly"]);
+    const yearlyOnly = planConfig({ ...BASE, ...ON, STRIPE_PRO_YEARLY_PRICE_ID: "price_year" });
     assert.deepEqual(yearlyOnly.plans.map((p) => p.id), ["monthly", "yearly"]);
     assert.equal(findPlan(yearlyOnly, "lifetime"), null);
 
-    const all = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
+    const all = planConfig({ ...BASE, ...ON, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
     assert.deepEqual(all.plans.map((p) => [p.id, p.cents, p.mode, p.priceId]), [
       ["monthly", 399, "subscription", "price_month"],
       ["yearly", 2900, "subscription", "price_year"],
@@ -66,6 +76,8 @@ describe("plan config", () => {
   it("uses the display-price env vars and ignores bad values", () => {
     const config = planConfig({
       ...BASE,
+      PRO_YEARLY_ENABLED: "on",
+      PRO_LIFETIME_ENABLED: "on",
       STRIPE_PRO_YEARLY_PRICE_ID: "price_year",
       STRIPE_PRO_LIFETIME_PRICE_ID: "price_life",
       NEXT_PUBLIC_PRO_PRICE_CENTS: "500",
@@ -152,5 +164,19 @@ describe("checkoutAllowed (test mode gate)", () => {
     assert.equal(checkoutAllowed({ STRIPE_SECRET_KEY: "sk_test_x", CHECKOUT_ENABLED: "on" }), true);
     assert.equal(checkoutAllowed({ STRIPE_SECRET_KEY: "sk_" + "live_x", CHECKOUT_ENABLED: "on" }), false);
     assert.equal(checkoutAllowed({ STRIPE_SECRET_KEY: "sk_" + "live_x", CHECKOUT_ENABLED: "on", STRIPE_ALLOW_LIVE: "yes" }), true);
+  });
+});
+
+describe("launch disclosures (Legal Review 2026-10-24)", () => {
+  it("builds the auto-renew disclosure with the price, cancel route and seller", () => {
+    const d = renewalDisclosure("$3.99");
+    assert.equal(d.headline, "MakeQR Pro — $3.99 per month, billed monthly until you cancel.");
+    assert.match(d.body, /Cancel anytime online with the Manage billing button or by emailing support@ridgelineapps\.us\./);
+    assert.match(d.body, /Sold by Ridgeline Apps LLC, an Ohio limited liability company\.$/);
+  });
+  it("keeps Stripe Tax off unless STRIPE_AUTOMATIC_TAX=on, and uses the MAKEQR suffix", () => {
+    assert.equal(automaticTaxOn({}), false);
+    assert.equal(automaticTaxOn({ STRIPE_AUTOMATIC_TAX: "on" }), true);
+    assert.equal(STATEMENT_DESCRIPTOR_SUFFIX, "MAKEQR");
   });
 });
