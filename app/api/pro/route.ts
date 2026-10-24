@@ -17,6 +17,7 @@ import {
   verifyProToken,
 } from "@/lib/pro-token";
 import { getStripe, isMissingResource } from "@/lib/stripe";
+import { adsAllowedForRequest, CF_COUNTRY_HEADER, COUNTRY_HEADER } from "@/lib/ads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,8 +40,11 @@ function billingState(req: NextRequest): { billing: boolean; clear: boolean } {
 
 export async function GET(req: NextRequest) {
   const bill = billingState(req);
+  // `ads`: AdSense may load for this visitor's region (false in the EEA/UK/CH and when unknown).
+  const ads = adsAllowedForRequest(req.headers.get(COUNTRY_HEADER), req.headers.get(CF_COUNTRY_HEADER));
   const reply = (pro: boolean) => {
-    const res = NextResponse.json({ pro, billing: bill.billing });
+    const res = NextResponse.json({ pro, billing: bill.billing, ads: !pro && ads });
+    res.headers.set("Cache-Control", "private, no-store");
     return bill.clear ? withoutBillingCookie(res) : res;
   };
 

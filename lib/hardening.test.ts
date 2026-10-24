@@ -84,7 +84,7 @@ describe("Checkout Session id is one-time and short-lived (§3b.1)", () => {
   });
 
   it("does not load AdSense on a checkout return, even after the URL was scrubbed", () => {
-    const notPro = { ok: true, body: { pro: false } };
+    const notPro = { ok: true, body: { pro: false, ads: true } };
     assert.equal(shouldLoadAds("?session_id=cs_1", notPro), false);
     assert.equal(shouldLoadAds("", notPro, true), false);
     assert.equal(isCheckoutReturn("?restore=ok"), true);
