@@ -53,8 +53,49 @@ export function isPlanId(value: unknown): value is PlanId {
   return value === "monthly" || value === "yearly" || value === "lifetime";
 }
 
-export function planConfig(env: Env = process.env): PlanConfig {
+/**
+ * TEST MODE gate (2026-10-24). Checkout only starts when CHECKOUT_ENABLED is on (default off)
+ * and STRIPE_SECRET_KEY is set. A live key (sk_live_/rk_live_) is refused unless STRIPE_ALLOW_LIVE=yes.
+ */
+export function checkoutAllowed(env: Env = process.env): boolean {
+  const flag = clean(env.CHECKOUT_ENABLED).toLowerCase();
+  if (!["on", "true", "1", "yes"].includes(flag)) return false;
   const secret = clean(env.STRIPE_SECRET_KEY);
+  if (!secret) return false;
+  if (/^(sk|rk)_live_/.test(secret) && clean(env.STRIPE_ALLOW_LIVE) !== "yes") return false;
+  return true;
+}
+
+function flagOn(value: string | undefined): boolean {
+  return ["on", "true", "1", "yes"].includes(clean(value).toLowerCase());
+}
+
+/**
+ * Legal Review launch rules (2026-10-24):
+ * - Monthly only at launch. Yearly needs PRO_YEARLY_ENABLED=on and lifetime needs PRO_LIFETIME_ENABLED=on
+ *   (both off by default) even when their Stripe price ids are set.
+ * - Stripe Tax only when STRIPE_AUTOMATIC_TAX=on (after Jason's Ohio vendor's license).
+ * - Card statement: RIDGELINE* MAKEQR. One-time (lifetime) Checkout sets the suffix per session;
+ *   subscription charges use the Product's statement_descriptor "RIDGELINE MAKEQR" (set by /workspace/stripe-setup).
+ */
+export const STATEMENT_DESCRIPTOR_SUFFIX = "MAKEQR";
+export const SUPPORT_EMAIL_ADDRESS = "support@ridgelineapps.us";
+export const RENEWAL_CONSENT_TEXT = "I agree to the Terms and understand this plan renews automatically every month until I cancel.";
+
+export function automaticTaxOn(env: Env = process.env): boolean {
+  return flagOn(env.STRIPE_AUTOMATIC_TAX);
+}
+
+/** Auto-renew disclosure shown directly above the subscribe button (common/checkout-and-subscription-disclosures.md). */
+export function renewalDisclosure(price: string): { headline: string; body: string } {
+  return {
+    headline: `MakeQR Pro — ${price} per month, billed monthly until you cancel.`,
+    body: `Your card is charged today and then every month on the same date. Cancel anytime online with the Manage billing button or by emailing ${SUPPORT_EMAIL_ADDRESS}. Cancelling stops future charges, and you keep access until the end of the period you already paid for. No refunds for partial months unless the law requires one. Sold by Ridgeline Apps LLC, an Ohio limited liability company.`,
+  };
+}
+
+export function planConfig(env: Env = process.env): PlanConfig {
+  const secret = checkoutAllowed(env) ? clean(env.STRIPE_SECRET_KEY) : "";
   // No fallback to NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: unset means "Pro coming soon", never a charge.
   const monthly = clean(env.STRIPE_PRO_PRICE_ID);
   if (!secret || !monthly) return { configured: false, plans: [] };
@@ -67,7 +108,7 @@ export function planConfig(env: Env = process.env): PlanConfig {
       per: "/ month",
     },
   ];
-  const yearly = clean(env.STRIPE_PRO_YEARLY_PRICE_ID);
+  const yearly = flagOn(env.PRO_YEARLY_ENABLED) ? clean(env.STRIPE_PRO_YEARLY_PRICE_ID) : "";
   if (yearly) {
     plans.push({
       id: "yearly",
@@ -77,7 +118,7 @@ export function planConfig(env: Env = process.env): PlanConfig {
       per: "/ year",
     });
   }
-  const lifetime = clean(env.STRIPE_PRO_LIFETIME_PRICE_ID);
+  const lifetime = flagOn(env.PRO_LIFETIME_ENABLED) ? clean(env.STRIPE_PRO_LIFETIME_PRICE_ID) : "";
   if (lifetime) {
     plans.push({
       id: "lifetime",

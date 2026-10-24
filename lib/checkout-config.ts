@@ -15,6 +15,16 @@ export type CheckoutConfig =
 export function checkoutConfig(env: Env = process.env): CheckoutConfig {
   const secret = (env.STRIPE_SECRET_KEY ?? "").trim();
   const priceId = (env.STRIPE_PRO_PRICE_ID ?? "").trim();
-  if (!secret || !priceId) return { configured: false, priceId: null };
+  if (!secret || !priceId || !checkoutAllowed(env)) return { configured: false, priceId: null };
   return { configured: true, priceId };
+}
+
+/** Same gate as checkoutAllowed() in lib/plans.ts (kept import-free so node --test can load it). */
+function checkoutAllowed(env: Env): boolean {
+  const flag = (env.CHECKOUT_ENABLED ?? "").trim().toLowerCase();
+  if (!["on", "true", "1", "yes"].includes(flag)) return false;
+  const secret = (env.STRIPE_SECRET_KEY ?? "").trim();
+  if (!secret) return false;
+  if (/^(sk|rk)_live_/.test(secret) && (env.STRIPE_ALLOW_LIVE ?? "").trim() !== "yes") return false;
+  return true;
 }

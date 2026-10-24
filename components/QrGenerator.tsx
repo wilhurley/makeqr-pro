@@ -15,6 +15,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { activationSucceeded, PENDING_SESSION_KEY, pendingSessionId } from "@/lib/activation";
 import { isFreeType, previewAllowed, typeForEntitlement, type QRType } from "@/lib/qr-types";
+import { renewalDisclosure } from "@/lib/plans";
 
 export type { QRType };
 
@@ -70,6 +71,8 @@ export default function QrGenerator({
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [plans, setPlans] = useState<PlansState | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
+  // Auto-renew consent box: unchecked by default, required before a subscription checkout.
+  const [renewalConsent, setRenewalConsent] = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
   const [canManageBilling, setCanManageBilling] = useState(false);
   const [billingMessage, setBillingMessage] = useState("");
@@ -266,7 +269,7 @@ export default function QrGenerator({
     setCheckoutLoading(plan);
     setCheckoutError("");
     try {
-      const res  = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
+      const res  = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan, consent: renewalConsent }) });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
@@ -654,9 +657,23 @@ export default function QrGenerator({
               </>
             ) : (
               <>
+                {(() => {
+                  const monthly = plans.plans.find((plan) => plan.id === "monthly");
+                  if (!monthly) return null;
+                  const d = renewalDisclosure(monthly.price);
+                  return (
+                    <div className="mb-3 text-left text-xs text-gray-600 dark:text-gray-300">
+                      <p><strong>{d.headline}</strong> {d.body}</p>
+                      <label className="mt-2 flex items-start gap-2">
+                        <input type="checkbox" name="renewal_consent" checked={renewalConsent} onChange={(e) => setRenewalConsent(e.target.checked)} className="mt-0.5" />
+                        <span>I agree to the <a href="/terms" className="underline">Terms</a> and understand this plan renews automatically every month until I cancel.</span>
+                      </label>
+                    </div>
+                  );
+                })()}
                 <div className="space-y-2">
                   {plans.plans.map((plan) => (
-                    <button key={plan.id} onClick={() => void startCheckout(plan.id)} disabled={checkoutLoading !== null}
+                    <button key={plan.id} onClick={() => void startCheckout(plan.id)} disabled={checkoutLoading !== null || (plan.id !== "lifetime" && !renewalConsent)}
                       className={`w-full font-bold py-3.5 rounded-2xl hover:opacity-90 disabled:opacity-50 transition ${plan.id === "monthly" ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-lg" : "border-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300"}`}>
                       {checkoutLoading === plan.id ? "Opening checkout..." : `Get Pro — ${plan.price} ${plan.per}`}
                       {plan.badge && <span className="block text-xs font-semibold opacity-80 mt-0.5">{plan.badge}</span>}
