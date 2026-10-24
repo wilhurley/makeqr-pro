@@ -10,6 +10,7 @@ const UPDATED: Record<string, string> = {
   "https://makeqr.pro": "2026-10-22",
   "https://makeqr.pro/about": "2026-10-22",
   "https://makeqr.pro/best-practices": "2026-10-22",
+  "https://makeqr.pro/scan": "2026-10-24",
   "https://makeqr.pro/privacy": "2026-10-22",
   "https://makeqr.pro/terms": "2026-10-23",
   "https://makeqr.pro/refund": "2026-10-23",
@@ -31,6 +32,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "", changeFrequency: "weekly", priority: 1 },
     { path: "/about", changeFrequency: "monthly", priority: 0.6 },
     { path: "/best-practices", changeFrequency: "monthly", priority: 0.7 },
+    { path: "/scan", changeFrequency: "monthly", priority: 0.8 },
     ...USE_CASES.map((useCase) => ({
       path: `/qr-code-for/${useCase.slug}`,
       changeFrequency: "monthly" as const,

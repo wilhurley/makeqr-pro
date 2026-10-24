@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --experimental-default-type=module --test lib/pro-token.test.ts lib/plans.test.ts lib/ads.test.ts lib/email.test.ts lib/checkout-config.test.ts lib/client-gating.test.ts"
+    "test": "node --experimental-strip-types --experimental-default-type=module --test lib/pro-token.test.ts lib/plans.test.ts lib/ads.test.ts lib/email.test.ts lib/checkout-config.test.ts lib/client-gating.test.ts",
+    "gen:icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
     "@stripe/stripe-js": "^8.10.0",
+    "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
     "next": "16.1.7",
     "qrcode": "^1.5.4",
