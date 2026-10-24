@@ -38,7 +38,7 @@ Set these in `.env.local` and in the Vercel project (**Production**, and **Previ
 | `RESEND_API_KEY` | server | Optional. Enables magic-link restore (`POST /api/restore` emails a one-time sign-in link). Without it **and** `RESTORE_EMAIL_FROM`, restore returns `410` and points users to the Stripe sign-in link. |
 | `RESTORE_EMAIL_FROM` | server | Optional. Sender for restore emails, e.g. `MakeQR Pro <no-reply@makeqr.pro>` (a domain verified in Resend). |
 | `NEXT_PUBLIC_APP_URL` | public | Origin for Checkout and Billing Portal return URLs, e.g. `https://makeqr.pro`. |
-| `NEXT_PUBLIC_PRO_PRICE_CENTS` | public | Price shown in the UI and Offer structured data, in US cents. `399` (the default) is `$3.99`. Must match the Stripe Price. Requires a rebuild. |
+| `NEXT_PUBLIC_PRO_PRICE_CENTS` | public | Price shown in the UI and Offer structured data, in US cents. `399` (the default) is `$3.99`. Production is set to `399` (was `499` until 2026-10-24). Must match the Stripe Price. Requires a rebuild. |
 | `STRIPE_PRO_YEARLY_PRICE_ID` | server | Optional. Recurring **$29 / year** Price. The yearly button only shows when this is set. |
 | `NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS` | public | Optional display price for yearly. Default `2900` = `$29`. Must match the Stripe Price. |
 | `STRIPE_PRO_LIFETIME_PRICE_ID` | server | Optional. One-time **$39** Price (not recurring). Shown as "Launch lifetime deal, limited" only when this is set. |
