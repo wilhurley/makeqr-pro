@@ -53,8 +53,21 @@ export function isPlanId(value: unknown): value is PlanId {
   return value === "monthly" || value === "yearly" || value === "lifetime";
 }
 
-export function planConfig(env: Env = process.env): PlanConfig {
+/**
+ * TEST MODE gate (2026-10-24). Checkout only starts when CHECKOUT_ENABLED is on (default off)
+ * and STRIPE_SECRET_KEY is set. A live key (sk_live_/rk_live_) is refused unless STRIPE_ALLOW_LIVE=yes.
+ */
+export function checkoutAllowed(env: Env = process.env): boolean {
+  const flag = clean(env.CHECKOUT_ENABLED).toLowerCase();
+  if (!["on", "true", "1", "yes"].includes(flag)) return false;
   const secret = clean(env.STRIPE_SECRET_KEY);
+  if (!secret) return false;
+  if (/^(sk|rk)_live_/.test(secret) && clean(env.STRIPE_ALLOW_LIVE) !== "yes") return false;
+  return true;
+}
+
+export function planConfig(env: Env = process.env): PlanConfig {
+  const secret = checkoutAllowed(env) ? clean(env.STRIPE_SECRET_KEY) : "";
   // No fallback to NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: unset means "Pro coming soon", never a charge.
   const monthly = clean(env.STRIPE_PRO_PRICE_ID);
   if (!secret || !monthly) return { configured: false, plans: [] };

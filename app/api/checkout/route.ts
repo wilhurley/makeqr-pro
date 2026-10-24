@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       ...(email ? { customer_email: email } : {}),
       line_items: [{ price: plan.priceId, quantity: 1 }],
       success_url: `${getAppUrl()}/?pro=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${getAppUrl()}/?pro=cancel`,
+      cancel_url: `${getAppUrl()}/pro/cancel`,
       metadata,
     };
     const session =

@@ -7,6 +7,7 @@ import {
   lifetimeGrantFromSession,
   lifetimeRevokedByRefund,
   planConfig,
+  checkoutAllowed,
 } from "./plans.ts";
 import {
   claimsNeedRefresh,
@@ -19,17 +20,17 @@ import {
   verifyProToken,
 } from "./pro-token.ts";
 
-const BASE = { STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRO_PRICE_ID: "price_month" };
+const BASE = { STRIPE_SECRET_KEY: "sk_test_x", CHECKOUT_ENABLED: "on", STRIPE_PRO_PRICE_ID: "price_month" };
 
 describe("plan config", () => {
   it("is not configured without the secret key or the monthly price", () => {
     assert.deepEqual(planConfig({}), { configured: false, plans: [] });
-    assert.equal(planConfig({ STRIPE_SECRET_KEY: "sk_test_x" }).configured, false);
+    assert.equal(planConfig({ STRIPE_SECRET_KEY: "sk_test_x", CHECKOUT_ENABLED: "on" }).configured, false);
     assert.equal(planConfig({ STRIPE_PRO_PRICE_ID: "price_month" }).configured, false);
-    assert.equal(planConfig({ STRIPE_SECRET_KEY: "  ", STRIPE_PRO_PRICE_ID: "price_month" }).configured, false);
+    assert.equal(planConfig({ STRIPE_SECRET_KEY: "  ", CHECKOUT_ENABLED: "on", STRIPE_PRO_PRICE_ID: "price_month" }).configured, false);
     // Yearly/lifetime alone never turn checkout on.
     assert.equal(
-      planConfig({ STRIPE_SECRET_KEY: "sk", STRIPE_PRO_YEARLY_PRICE_ID: "p_y", STRIPE_PRO_LIFETIME_PRICE_ID: "p_l" }).configured,
+      planConfig({ STRIPE_SECRET_KEY: "sk", CHECKOUT_ENABLED: "on", STRIPE_PRO_YEARLY_PRICE_ID: "p_y", STRIPE_PRO_LIFETIME_PRICE_ID: "p_l" }).configured,
       false,
     );
   });
@@ -41,7 +42,7 @@ describe("plan config", () => {
   });
 
   it("never falls back to the legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID (old $4.99 Price)", () => {
-    const legacyOnly = planConfig({ STRIPE_SECRET_KEY: "sk", NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: "price_legacy" });
+    const legacyOnly = planConfig({ STRIPE_SECRET_KEY: "sk", CHECKOUT_ENABLED: "on", NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: "price_legacy" });
     assert.deepEqual(legacyOnly, { configured: false, plans: [] }, "coming soon, no charge");
     const both = planConfig({ ...BASE, NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: "price_legacy" });
     assert.equal(findPlan(both, "monthly")?.priceId, "price_month");
@@ -142,5 +143,14 @@ describe("lifetime cookie", () => {
     } finally {
       delete process.env.PRO_COOKIE_SECRET;
     }
+  });
+});
+
+describe("checkoutAllowed (test mode gate)", () => {
+  it("defaults off and refuses live keys", () => {
+    assert.equal(planConfig({ STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRO_PRICE_ID: "price_month" }).configured, false);
+    assert.equal(checkoutAllowed({ STRIPE_SECRET_KEY: "sk_test_x", CHECKOUT_ENABLED: "on" }), true);
+    assert.equal(checkoutAllowed({ STRIPE_SECRET_KEY: "sk_" + "live_x", CHECKOUT_ENABLED: "on" }), false);
+    assert.equal(checkoutAllowed({ STRIPE_SECRET_KEY: "sk_" + "live_x", CHECKOUT_ENABLED: "on", STRIPE_ALLOW_LIVE: "yes" }), true);
   });
 });
