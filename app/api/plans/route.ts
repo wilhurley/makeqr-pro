@@ -15,7 +15,6 @@ export async function GET() {
         id: plan.id,
         price: formatProPrice(plan.cents),
         per: plan.per,
-        ...(plan.badge ? { badge: plan.badge } : {}),
       })),
     },
     { headers: { "cache-control": "no-store" } },

@@ -5,7 +5,7 @@ import { getAppUrl, getStripe } from "@/lib/stripe";
 import { acceptanceMetadata, consentError, STRIPE_TERMS_MESSAGE, type ConsentBody } from "@/lib/checkout-consent";
 import { termsSha256 } from "@/lib/terms-content";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/terms-version";
-import { formatProPrice, PRO_LIFETIME_PRICE, PRO_PRICE, PRO_YEARLY_PRICE } from "@/lib/pricing";
+import { formatProPrice, PRO_PRICE } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       ...acceptanceMetadata({
         plan: consentPlan,
         termsVersion: TERMS_VERSION,
-        termsSha256: termsSha256({ pro: PRO_PRICE, yearly: PRO_YEARLY_PRICE, lifetime: PRO_LIFETIME_PRICE }),
+        termsSha256: termsSha256({ pro: PRO_PRICE }),
         privacyVersion: PRIVACY_VERSION,
         now: new Date(),
       }),
@@ -68,20 +68,12 @@ export async function POST(req: NextRequest) {
       consent_collection: { terms_of_service: "required" as const },
       custom_text: { terms_of_service_acceptance: { message: STRIPE_TERMS_MESSAGE } },
     };
-    const session =
-      plan.mode === "payment"
-        ? await stripe.checkout.sessions.create({
-            ...common,
-            mode: "payment",
-            // Lifetime Pro is recorded on the Customer, so one must exist.
-            customer_creation: "always",
-            payment_intent_data: { metadata },
-          })
-        : await stripe.checkout.sessions.create({
-            ...common,
-            mode: "subscription",
-            subscription_data: { metadata },
-          });
+    // Subscriptions only. One-time plans are not offered.
+    const session = await stripe.checkout.sessions.create({
+      ...common,
+      mode: "subscription",
+      subscription_data: { metadata },
+    });
 
     return NextResponse.json({ url: session.url });
   } catch (err) {

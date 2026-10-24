@@ -3,17 +3,17 @@
  * Pure functions with no imports so node:test can load them directly.
  *
  * Box 1 (Terms + Privacy) is always required. Box 2 (automatic renewal) is required for
- * subscriptions (monthly, yearly) and not shown for lifetime. The server rejects a checkout
+ * subscriptions (monthly, yearly) and not shown for a one-time payment (none is offered). The server rejects a checkout
  * request unless both required boxes were ticked for the current Terms version; the HTML
  * `required` attribute alone is not relied on. Stripe Checkout also collects its own
  * terms-of-service consent (consent_collection.terms_of_service = "required").
  */
 
-export type ConsentPlan = { id: "monthly" | "yearly" | "lifetime"; mode: "subscription" | "payment"; price: string };
+export type ConsentPlan = { id: "monthly" | "yearly"; mode: "subscription" | "payment"; price: string };
 
 export const TERMS_BOX_TEXT = "I agree to the Terms of Service and have read the Privacy Policy.";
 
-/** Box 2 text, exactly per the spec's MakeQR row. Null for lifetime (no renewal). */
+/** Box 2 text, exactly per the spec's MakeQR row. Null for a one-time payment (no renewal). */
 export function renewalBoxText(plan: ConsentPlan): string | null {
   if (plan.mode !== "subscription") return null;
   const period = plan.id === "yearly" ? "year" : "month";

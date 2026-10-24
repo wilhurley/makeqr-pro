@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
-import { PRO_LIFETIME_PRICE, PRO_PRICE, PRO_YEARLY_PRICE } from "@/lib/pricing";
+import { PRO_PRICE } from "@/lib/pricing";
 import { COMPANY, COMPANY_LOCATION, pageMetadata, SUPPORT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
@@ -34,8 +34,7 @@ export default function PricingPage() {
             <p>
               Unlocks WiFi, Email, Phone, SMS and Contact codes, logo overlay, bulk generation, SVG export and sizes up
               to 1024px. Pro is a monthly subscription billed by Stripe that renews automatically until you cancel.
-              Yearly and lifetime plans are coming soon. When checkout offers them, there will also be a {PRO_YEARLY_PRICE} yearly
-              {" "}subscription and a {PRO_LIFETIME_PRICE} one-time lifetime purchase (launch deal). The price you pay is the one shown at Stripe checkout.
+              The price you pay is the one shown at Stripe checkout.
             </p>
           </section>
           <section>

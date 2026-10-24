@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { TermsMarkdown } from "@/components/TermsMarkdown";
-import { PRO_LIFETIME_PRICE, PRO_PRICE, PRO_YEARLY_PRICE } from "@/lib/pricing";
+import { PRO_PRICE } from "@/lib/pricing";
 import { pageMetadata } from "@/lib/site";
 import { termsMarkdown } from "@/lib/terms-content";
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 export default function TermsPage() {
-  const source = termsMarkdown({ pro: PRO_PRICE, yearly: PRO_YEARLY_PRICE, lifetime: PRO_LIFETIME_PRICE });
+  const source = termsMarkdown({ pro: PRO_PRICE });
   return (
     <main className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-6 py-16">

@@ -39,7 +39,7 @@ export function SiteFooter() {
           Contact
         </Link>
       </p>
-      <p className="mt-2">QR Code is a registered trademark of DENSO WAVE INCORPORATED. MakeQR Pro is not affiliated with or endorsed by DENSO WAVE.</p>
+      <p className="mt-2">QR Code is a registered trademark of DENSO WAVE INCORPORATED.</p>
     </footer>
   );
 }
