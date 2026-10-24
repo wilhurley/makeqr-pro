@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import QRCode from "qrcode";
+import { checkScanability, type ECLevel } from "./lib/scanability";
 
 type QRType = "url" | "text" | "email" | "phone" | "sms" | "wifi" | "vcard" | "geo" | "event";
-type ECLevel = "L" | "M" | "Q" | "H";
 
 interface WifiData  { ssid: string; password: string; encryption: string; }
 interface VCardData { name: string; phone: string; email: string; company: string; website: string; }
@@ -175,6 +175,22 @@ export default function Home() {
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(""));
   }, [buildQrData, fgColor, bgColor, size, logoFile, isPro, ecLevel, generateQR]);
+
+  const scanReport = useMemo(() => {
+    const effectiveSize = isPro ? size : Math.min(size, 512);
+    const report = checkScanability({
+      fg: fgColor,
+      bg: bgColor,
+      size: effectiveSize,
+      contentLength: new TextEncoder().encode(buildQrData()).length,
+      margin: 2,
+      ec: ecLevel,
+    });
+    if (isPro && logoFile && ecLevel !== "H") {
+      report.issues.push({ level: "warning", message: "Logos cover part of the code; use High error correction." });
+    }
+    return report;
+  }, [buildQrData, fgColor, bgColor, size, isPro, logoFile, ecLevel]);
 
   const handleTabClick = (t: typeof TABS[0]) => {
     if (t.pro && !isPro) { setShowUpgrade(true); return; }
@@ -468,6 +484,35 @@ export default function Home() {
                   </div>
                 )}
               </div>
+              {qrDataUrl && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className={`mb-4 rounded-xl p-3 text-xs ${
+                    scanReport.issues.length === 0
+                      ? "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400"
+                      : scanReport.issues.some(i => i.level === "error")
+                        ? "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400"
+                        : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
+                  }`}
+                >
+                  {scanReport.issues.length === 0 ? (
+                    <p className="font-medium">✓ Looks easy to scan</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {scanReport.issues.map((issue, i) => (
+                        <li
+                          key={i}
+                          className={issue.level === "error" ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}
+                        >
+                          {issue.message}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="text-gray-400 mt-1.5">Contrast ratio: {scanReport.contrastRatio.toFixed(1)}:1</p>
+                </div>
+              )}
               <div className="space-y-2">
                 <button onClick={downloadPng} disabled={!qrDataUrl}
                   className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-95">
