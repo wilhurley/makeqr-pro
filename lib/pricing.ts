@@ -6,7 +6,8 @@
  * Production sets NEXT_PUBLIC_PRO_PRICE_CENTS=399 (changed from 499 on 2026-10-24).
  *
  * Price changes apply to new subscriptions only: existing subscribers keep their
- * current price (Terms section 4). Changing this display value never touches
+ * current price. (Terms C11.5 also requires 30 days' email notice for any change to an
+ * existing subscription.) Changing this display value never touches
  * Stripe Prices or existing subscriptions; billing is unchanged.
  */
 const DEFAULT_PRO_PRICE_CENTS = 399;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { grantLifetimeFromSession, PRO_BLOCK_METADATA_KEY, revokeLifetimeForRefund } from "@/lib/pro-access";
 import { getStripe } from "@/lib/stripe";
+import { stripeTermsAccepted } from "@/lib/checkout-consent";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,6 +56,11 @@ export async function POST(req: NextRequest) {
         break;
       case "checkout.session.completed":
       case "checkout.session.async_payment_succeeded":
+        // Clickwrap check (spec section 2.7): Stripe should only complete a session after its
+        // required Terms box was ticked. Log loudly if it wasn't, so it can be reviewed.
+        if (!stripeTermsAccepted(event.data.object)) {
+          console.error("checkout session completed without Terms consent", event.data.object.id);
+        }
         // Subscriptions need nothing here. Lifetime payments are recorded on the Customer.
         await grantLifetimeFromSession(stripe, event.data.object);
         break;

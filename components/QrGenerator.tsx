@@ -1,5 +1,7 @@
 "use client";
 import { PRO_PRICE } from "@/lib/pricing";
+import { renewalBoxText } from "@/lib/checkout-consent";
+import { TERMS_VERSION } from "@/lib/terms-version";
 
 type PublicPlan = { id: "monthly" | "yearly" | "lifetime"; price: string; per: string; badge?: string };
 type PlansState = { configured: boolean; plans: PublicPlan[] };
@@ -70,6 +72,10 @@ export default function QrGenerator({
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [plans, setPlans] = useState<PlansState | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
+  // Clickwrap (Legal Review clickwrap-spec.md): both boxes start unchecked.
+  const [selectedPlan, setSelectedPlan] = useState<PublicPlan["id"]>("monthly");
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptRenewal, setAcceptRenewal] = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
   const [canManageBilling, setCanManageBilling] = useState(false);
   const [billingMessage, setBillingMessage] = useState("");
@@ -274,7 +280,11 @@ export default function QrGenerator({
     setCheckoutLoading(plan);
     setCheckoutError("");
     try {
-      const res  = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
+      const res  = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, acceptTerms, acceptRenewal, termsVersion: TERMS_VERSION }),
+      });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
@@ -658,15 +668,50 @@ export default function QrGenerator({
               </>
             ) : (
               <>
-                <div className="space-y-2">
-                  {plans.plans.map((plan) => (
-                    <button key={plan.id} onClick={() => void startCheckout(plan.id)} disabled={checkoutLoading !== null}
-                      className={`w-full font-bold py-3.5 rounded-2xl hover:opacity-90 disabled:opacity-50 transition ${plan.id === "monthly" ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-lg" : "border-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300"}`}>
-                      {checkoutLoading === plan.id ? "Opening checkout..." : `Get Pro — ${plan.price} ${plan.per}`}
-                      {plan.badge && <span className="block text-xs font-semibold opacity-80 mt-0.5">{plan.badge}</span>}
-                    </button>
-                  ))}
-                </div>
+                {(() => {
+                  const plan = plans.plans.find((p) => p.id === selectedPlan) ?? plans.plans[0];
+                  const subscription = plan.id !== "lifetime";
+                  const renewalText = renewalBoxText({ id: plan.id, mode: subscription ? "subscription" : "payment", price: plan.price });
+                  const period = plan.id === "yearly" ? "year" : "month";
+                  const ready = acceptTerms && (!subscription || acceptRenewal);
+                  return (
+                    <div className="space-y-3 text-sm text-gray-800 dark:text-gray-200">
+                      {plans.plans.length > 1 && (
+                        <fieldset className="space-y-1">
+                          <legend className="font-semibold mb-1">Choose a plan</legend>
+                          {plans.plans.map((p) => (
+                            <label key={p.id} className="flex items-center gap-2">
+                              <input type="radio" name="pro-plan" checked={plan.id === p.id}
+                                onChange={() => { setSelectedPlan(p.id); setAcceptRenewal(false); }} />
+                              <span>Pro {p.price} {p.per}{p.badge ? ` (${p.badge})` : ""}</span>
+                            </label>
+                          ))}
+                        </fieldset>
+                      )}
+                      <p>
+                        {subscription
+                          ? `MakeQR Pro, ${plan.price} per ${period}, charged now and then automatically every ${period} until you cancel. Cancel anytime online with Manage billing.`
+                          : `MakeQR Pro lifetime, ${plan.price}, one-time charge, no subscription. A refund or chargeback of this payment ends lifetime Pro.`}
+                      </p>
+                      <label className="flex items-start gap-2">
+                        <input type="checkbox" required checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-1" />
+                        <span>
+                          I agree to the <a href="/terms" target="_blank" rel="noopener" className="text-indigo-600 underline">Terms of Service</a> and have read the <a href="/privacy" target="_blank" rel="noopener" className="text-indigo-600 underline">Privacy Policy</a>.
+                        </span>
+                      </label>
+                      {renewalText && (
+                        <label className="flex items-start gap-2">
+                          <input type="checkbox" required checked={acceptRenewal} onChange={(e) => setAcceptRenewal(e.target.checked)} className="mt-1" />
+                          <span>{renewalText}</span>
+                        </label>
+                      )}
+                      <button onClick={() => void startCheckout(plan.id)} disabled={checkoutLoading !== null || !ready}
+                        className="w-full font-bold py-3.5 rounded-2xl hover:opacity-90 disabled:opacity-50 transition bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-lg">
+                        {checkoutLoading === plan.id ? "Opening checkout..." : subscription ? `Subscribe for ${plan.price}/${period}` : `Pay ${plan.price}`}
+                      </button>
+                    </div>
+                  );
+                })()}
                 {checkoutError && <p className="text-center text-xs text-red-500 mt-2">{checkoutError}</p>}
                 <p className="text-center text-xs text-gray-400 mt-3">
                   {plans.plans.some((plan) => plan.id === "lifetime")

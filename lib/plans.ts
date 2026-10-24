@@ -67,7 +67,9 @@ export function planConfig(env: Env = process.env): PlanConfig {
       per: "/ month",
     },
   ];
-  const yearly = clean(env.STRIPE_PRO_YEARLY_PRICE_ID);
+  // Yearly stays off until the 15-45-day renewal reminder email works (Legal funding memo 2026-10-24 §7).
+  // Off by default; turn on only with YEARLY_PLANS_ENABLED=on after the reminder is live.
+  const yearly = clean(env.YEARLY_PLANS_ENABLED) === "on" ? clean(env.STRIPE_PRO_YEARLY_PRICE_ID) : "";
   if (yearly) {
     plans.push({
       id: "yearly",

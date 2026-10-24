@@ -47,12 +47,18 @@ describe("plan config", () => {
     assert.equal(findPlan(both, "monthly")?.priceId, "price_month");
   });
 
+  it("keeps yearly off unless YEARLY_PLANS_ENABLED=on, even with a yearly price id", () => {
+    assert.deepEqual(planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year" }).plans.map((p) => p.id), ["monthly"]);
+    assert.deepEqual(planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", YEARLY_PLANS_ENABLED: "yes" }).plans.map((p) => p.id), ["monthly"]);
+    assert.deepEqual(planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", YEARLY_PLANS_ENABLED: "on" }).plans.map((p) => p.id), ["monthly", "yearly"]);
+  });
+
   it("adds yearly ($29) and lifetime ($39, one-time) only when their price ids are set", () => {
-    const yearlyOnly = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year" });
+    const yearlyOnly = planConfig({ ...BASE, YEARLY_PLANS_ENABLED: "on", STRIPE_PRO_YEARLY_PRICE_ID: "price_year" });
     assert.deepEqual(yearlyOnly.plans.map((p) => p.id), ["monthly", "yearly"]);
     assert.equal(findPlan(yearlyOnly, "lifetime"), null);
 
-    const all = planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
+    const all = planConfig({ ...BASE, YEARLY_PLANS_ENABLED: "on", STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
     assert.deepEqual(all.plans.map((p) => [p.id, p.cents, p.mode, p.priceId]), [
       ["monthly", 399, "subscription", "price_month"],
       ["yearly", 2900, "subscription", "price_year"],
@@ -65,6 +71,7 @@ describe("plan config", () => {
   it("uses the display-price env vars and ignores bad values", () => {
     const config = planConfig({
       ...BASE,
+      YEARLY_PLANS_ENABLED: "on",
       STRIPE_PRO_YEARLY_PRICE_ID: "price_year",
       STRIPE_PRO_LIFETIME_PRICE_ID: "price_life",
       NEXT_PUBLIC_PRO_PRICE_CENTS: "500",
