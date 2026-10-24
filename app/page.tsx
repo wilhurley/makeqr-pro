@@ -36,9 +36,9 @@ export default function HomePage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Do these codes expire?</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Do these codes depend on MakeQR Pro?</h2>
           <p className="leading-relaxed">
-            No. Whatever you type is baked into the image. There&apos;s no account holding the code, and nothing here can switch it off later. If the link changes, or you want different text, make a new code and print that one.
+            Static QR codes encode your link directly, so they don&apos;t depend on our servers. There&apos;s no account holding the code. If the link changes, or you want different text, make a new code and print that one.
           </p>
         </section>
 

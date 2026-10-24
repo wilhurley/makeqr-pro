@@ -77,7 +77,7 @@ export const USE_CASES: UseCase[] = [
       },
     ],
     honesty:
-      "These are static QR codes. The network name and password are baked into the code, so it doesn't expire and there's no scan limit. If you change the password, you'll need a new code.",
+      "These are static QR codes. The network name and password are baked into the code, so it doesn't depend on our servers and we don't limit scans. If you change the password, you'll need a new code.",
     faqs: [
       {
         question: "Do I need an app to scan it?",
@@ -145,12 +145,12 @@ export const USE_CASES: UseCase[] = [
       },
     ],
     honesty:
-      "These are static QR codes. The review link is baked into the code, so it doesn't expire and there's no scan limit. If Google gives you a new link, you'll need a new code.",
+      "These are static QR codes. The review link is baked into the code, so it doesn't depend on our servers and we don't limit scans. If Google gives you a new link, you'll need a new code.",
     faqs: [
       {
         question: "Will the code stop working?",
         answer:
-          "The code itself doesn't expire. It keeps opening the same review link, with no scan limit. If that link changes, you'll need a new code.",
+          "The code encodes the review link directly, so it doesn't depend on our servers and we don't limit scans. If that link changes, you'll need a new code.",
       },
       {
         question: "Can I add my logo?",
@@ -171,7 +171,7 @@ export const USE_CASES: UseCase[] = [
     absoluteTitle: false,
     title: "Restaurant Menu QR Code Generator, Free",
     description:
-      "Put your menu on every table with a QR code. Paste your menu link, pick colors, download a PNG. Free, no signup, no watermark, and the code never expires.",
+      "Put your menu on every table with a QR code. Paste your menu link, pick colors, download a PNG. Free, no signup, no watermark. Static QR codes encode your link directly, so they don't depend on our servers.",
     h1: "QR code for your restaurant menu",
     intro: "Paste your menu link, pick colors, and download a PNG for the table.",
     cardTitle: "Restaurant menu",
@@ -207,7 +207,7 @@ export const USE_CASES: UseCase[] = [
       },
     ],
     honesty:
-      "These are static QR codes. The menu link is baked into the code, so it doesn't expire and there's no scan limit. Point it at a page you can update, and the printed code can stay when the specials change.",
+      "These are static QR codes. The menu link is baked into the code, so it doesn't depend on our servers and we don't limit scans. Point it at a page you can update, and the printed code can stay when the specials change.",
     faqs: [
       {
         question: "What if my menu changes?",
@@ -271,7 +271,7 @@ export const USE_CASES: UseCase[] = [
       },
     ],
     honesty:
-      "These are static QR codes. The contact details are baked into the code, so it doesn't expire and there's no scan limit. A new phone number means a new code.",
+      "These are static QR codes. The contact details are baked into the code, so it doesn't depend on our servers and we don't limit scans. A new phone number means a new code.",
     faqs: [
       {
         question: "Contact code or a link?",
@@ -338,7 +338,7 @@ export const USE_CASES: UseCase[] = [
       },
     ],
     honesty:
-      "These are static QR codes. The payment link is baked into the code, so it doesn't expire and there's no scan limit. If your username or link changes, you'll need a new code.",
+      "These are static QR codes. The payment link is baked into the code, so it doesn't depend on our servers and we don't limit scans. If your username or link changes, you'll need a new code.",
     faqs: [
       {
         question: "Does MakeQR handle the money?",
@@ -401,7 +401,7 @@ export const USE_CASES: UseCase[] = [
       },
     ],
     honesty:
-      "These are static QR codes. The listing link is baked into the code, so it doesn't expire and there's no scan limit. If the sign needs to open a different page, you'll need a new code.",
+      "These are static QR codes. The listing link is baked into the code, so it doesn't depend on our servers and we don't limit scans. If the sign needs to open a different page, you'll need a new code.",
     faqs: [
       {
         question: "What happens when the house sells?",
@@ -464,7 +464,7 @@ export const USE_CASES: UseCase[] = [
       },
     ],
     honesty:
-      "These are static QR codes. The link or the text is baked into the code, so it doesn't expire and there's no scan limit. If the date or the link changes, you'll need a new code. A code that opens a page you can update can stay on the flyer.",
+      "These are static QR codes. The link or the text is baked into the code, so it doesn't depend on our servers and we don't limit scans. If the date or the link changes, you'll need a new code. A code that opens a page you can update can stay on the flyer.",
     faqs: [
       {
         question: "Can I change the date after printing?",
@@ -474,7 +474,7 @@ export const USE_CASES: UseCase[] = [
       {
         question: "Does it expire after the event?",
         answer:
-          "No. The code keeps working. It doesn't shut off when the event is over. If it opens a page, you can update that page later. A text code keeps the time and place you typed.",
+          "The code encodes your link or text directly, so it doesn't depend on our servers and we don't switch it off after the event. If it opens a page, you can update that page later. A text code keeps the time and place you typed.",
       },
       {
         question: "Can I match the colors to the invite?",

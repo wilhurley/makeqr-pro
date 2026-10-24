@@ -43,9 +43,9 @@ export default function AboutPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Why a static code doesn&apos;t expire</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Why a static code doesn&apos;t depend on our servers</h2>
             <p>
-              The link or the text is written into the image. There&apos;s no short link on our server that we can shut off, and we don&apos;t count scans. If the page you pointed at moves, or you want different words in the code, make a new one and print it. The old image keeps saying what it said the day you downloaded it.
+              The link or the text is written into the image. There&apos;s no short link on our server that we can shut off, and we don&apos;t count scans. If the page you pointed at moves, or you want different words in the code, make a new one and print it.
             </p>
           </section>
 
