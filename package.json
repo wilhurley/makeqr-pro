@@ -6,10 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen:icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
     "@stripe/stripe-js": "^8.10.0",
+    "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
     "next": "16.1.7",
     "qrcode": "^1.5.4",

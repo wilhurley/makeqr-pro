@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import ServiceWorker from "./ServiceWorker";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -81,6 +82,13 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: SITE_NAME,
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   other: {
     "google-adsense-account": "ca-pub-8175259221220756",
@@ -204,6 +212,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         {children}
+        <ServiceWorker />
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8175259221220756"

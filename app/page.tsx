@@ -3,25 +3,42 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import QRCode from "qrcode";
 
-type QRType = "url" | "text" | "email" | "phone" | "sms" | "wifi" | "vcard";
+type QRType = "url" | "text" | "email" | "phone" | "sms" | "wifi" | "vcard" | "geo" | "event";
+type ECLevel = "L" | "M" | "Q" | "H";
 
 interface WifiData  { ssid: string; password: string; encryption: string; }
 interface VCardData { name: string; phone: string; email: string; company: string; website: string; }
-
-// Free tier: URL + Text only. Pro: all types.
-const FREE_TYPES: QRType[] = ["url", "text"];
+interface GeoData   { lat: string; lng: string; label: string; }
+interface EventData { title: string; location: string; start: string; end: string; notes: string; }
 
 const TABS: { id: QRType; label: string; icon: string; pro?: boolean }[] = [
-  { id: "url",   label: "URL",     icon: "🔗" },
+  { id: "url",   label: "Website", icon: "🔗" },
   { id: "text",  label: "Text",    icon: "📝" },
   { id: "wifi",  label: "WiFi",    icon: "📶", pro: true },
+  { id: "vcard", label: "Contact", icon: "👤", pro: true },
   { id: "email", label: "Email",   icon: "✉️",  pro: true },
   { id: "phone", label: "Phone",   icon: "📞", pro: true },
   { id: "sms",   label: "SMS",     icon: "💬", pro: true },
-  { id: "vcard", label: "Contact", icon: "👤", pro: true },
+  { id: "geo",   label: "Location",icon: "📍", pro: true },
+  { id: "event", label: "Event",   icon: "📅", pro: true },
 ];
 
 const COLORS = ["#000000", "#1d4ed8", "#15803d", "#b91c1c", "#7c3aed", "#c2410c", "#0f766e"];
+
+// One-tap output presets — set size + error correction for common print/screen needs.
+const OUTPUT_PRESETS: { id: string; label: string; icon: string; size: number; ec: ECLevel; desc: string }[] = [
+  { id: "flyer",   label: "Print on a flyer", icon: "📄", size: 1024, ec: "H", desc: "Large & high-res for posters" },
+  { id: "sticker", label: "Small sticker",    icon: "🔖", size: 512,  ec: "H", desc: "Max error correction, tiny prints" },
+  { id: "card",    label: "Business card",    icon: "💳", size: 600,  ec: "Q", desc: "Crisp at card size" },
+  { id: "screen",  label: "Share on screen",  icon: "📱", size: 256,  ec: "M", desc: "Quick on-screen sharing" },
+];
+
+// Format a datetime-local value (e.g. 2026-01-15T14:30) as an iCalendar local stamp
+// (20260115T143000). Seconds are appended since the picker omits them.
+function toICalStamp(v: string): string {
+  if (!v) return "";
+  return v.replace(/[-:]/g, "") + "00";
+}
 
 const PRO_FEATURES = [
   { icon: "📶", title: "WiFi, SMS, Contact QR codes", desc: "All 7 QR types" },
@@ -43,9 +60,13 @@ export default function Home() {
   const [smsMsg, setSmsMsg]       = useState("");
   const [wifi, setWifi]           = useState<WifiData>({ ssid: "", password: "", encryption: "WPA" });
   const [vcard, setVcard]         = useState<VCardData>({ name: "", phone: "", email: "", company: "", website: "" });
+  const [geo, setGeo]             = useState<GeoData>({ lat: "", lng: "", label: "" });
+  const [event, setEvent]         = useState<EventData>({ title: "", location: "", start: "", end: "", notes: "" });
   const [fgColor, setFgColor]     = useState("#000000");
   const [bgColor, setBgColor]     = useState("#ffffff");
   const [size, setSize]           = useState(256);
+  const [ecLevel, setEcLevel]     = useState<ECLevel>("H");
+  const [activePreset, setActivePreset] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [copied, setCopied]       = useState(false);
   const [isPro, setIsPro]         = useState(false);
@@ -53,7 +74,6 @@ export default function Home() {
   const [logoFile, setLogoFile]   = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   // Bulk generator state
-  const [showBulk, setShowBulk]   = useState(false);
   const [bulkText, setBulkText]   = useState("https://example.com\nhttps://site2.com\nhttps://site3.com");
   const [bulkLoading, setBulkLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -95,16 +115,28 @@ export default function Home() {
           vcard.email   ? `EMAIL:${vcard.email}` : "",
           vcard.website ? `URL:${vcard.website}` : "",
           "END:VCARD"].filter(Boolean).join("\n");
+      case "geo":
+        if (!geo.lat || !geo.lng) return "";
+        return `geo:${geo.lat},${geo.lng}${geo.label ? `?q=${encodeURIComponent(geo.label)}` : ""}`;
+      case "event":
+        if (!event.title) return "";
+        return ["BEGIN:VEVENT",
+          `SUMMARY:${event.title}`,
+          event.location ? `LOCATION:${event.location}` : "",
+          event.start ? `DTSTART:${toICalStamp(event.start)}` : "",
+          event.end   ? `DTEND:${toICalStamp(event.end)}` : "",
+          event.notes ? `DESCRIPTION:${event.notes}` : "",
+          "END:VEVENT"].filter(Boolean).join("\n");
       default: return "";
     }
-  }, [type, url, text, email, emailSubject, phone, smsPhone, smsMsg, wifi, vcard]);
+  }, [type, url, text, email, emailSubject, phone, smsPhone, smsMsg, wifi, vcard, geo, event]);
 
   // Generate QR — with optional logo overlay for Pro
-  const generateQR = useCallback(async (data: string, w: number, fg: string, bg: string, logo: string | null): Promise<string> => {
+  const generateQR = useCallback(async (data: string, w: number, fg: string, bg: string, logo: string | null, ec: ECLevel): Promise<string> => {
     const dataUrl = await QRCode.toDataURL(data, {
       width: w, margin: 2,
       color: { dark: fg, light: bg },
-      errorCorrectionLevel: "H",
+      errorCorrectionLevel: ec,
     });
     if (!logo) return dataUrl;
 
@@ -139,14 +171,20 @@ export default function Home() {
     const data = buildQrData();
     if (!data) { setQrDataUrl(""); return; }
     const effectiveSize = isPro ? size : Math.min(size, 512);
-    generateQR(data, effectiveSize, fgColor, bgColor, isPro ? logoFile : null)
+    generateQR(data, effectiveSize, fgColor, bgColor, isPro ? logoFile : null, ecLevel)
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(""));
-  }, [buildQrData, fgColor, bgColor, size, logoFile, isPro, generateQR]);
+  }, [buildQrData, fgColor, bgColor, size, logoFile, isPro, ecLevel, generateQR]);
 
   const handleTabClick = (t: typeof TABS[0]) => {
     if (t.pro && !isPro) { setShowUpgrade(true); return; }
     setType(t.id);
+  };
+
+  const applyPreset = (p: typeof OUTPUT_PRESETS[0]) => {
+    setSize(p.size);
+    setEcLevel(p.ec);
+    setActivePreset(p.id);
   };
 
   const startCheckout = async () => {
@@ -168,7 +206,7 @@ export default function Home() {
     if (!isPro) { setShowUpgrade(true); return; }
     const data = buildQrData();
     if (!data) return;
-    const svg = await QRCode.toString(data, { type: "svg", margin: 2, color: { dark: fgColor, light: bgColor } });
+    const svg = await QRCode.toString(data, { type: "svg", margin: 2, color: { dark: fgColor, light: bgColor }, errorCorrectionLevel: ecLevel });
     const blob = new Blob([svg], { type: "image/svg+xml" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = `makeqr-${type}.svg`; a.click();
@@ -198,7 +236,7 @@ export default function Home() {
     const JSZip = (await import("jszip")).default;
     const zip = new JSZip();
     for (const line of lines) {
-      const dataUrl = await QRCode.toDataURL(line, { width: 512, margin: 2, color: { dark: fgColor, light: bgColor }, errorCorrectionLevel: "H" });
+      const dataUrl = await QRCode.toDataURL(line, { width: 512, margin: 2, color: { dark: fgColor, light: bgColor }, errorCorrectionLevel: ecLevel });
       const base64 = dataUrl.split(",")[1];
       const filename = line.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40) + ".png";
       zip.file(filename, base64, { base64: true });
@@ -225,7 +263,9 @@ export default function Home() {
             }
           </div>
           <div className="flex items-center gap-3">
-            <p className="text-xs text-gray-500 hidden sm:block">No signup · No watermark</p>
+            <a href="/scan" className="flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-indigo-600 transition">
+              <span>📷</span><span>Scan</span>
+            </a>
             {!isPro && (
               <button onClick={() => setShowUpgrade(true)}
                 className="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:opacity-90 transition">
@@ -241,7 +281,12 @@ export default function Home() {
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">Free QR Code Generator</h1>
           <p className="text-gray-500 dark:text-gray-400 text-base max-w-xl mx-auto">
-            Create QR codes for URLs, WiFi, contacts, SMS, email and more — free, instant, no account needed.
+            Create QR codes for websites, WiFi, contacts, SMS, email, locations and calendar events — free, instant, no account needed.
+          </p>
+          <p className="mt-3">
+            <a href="/scan" className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:underline">
+              📷 Need to read one? Scan a QR code →
+            </a>
           </p>
         </div>
 
@@ -254,7 +299,7 @@ export default function Home() {
               <div className="flex flex-wrap gap-2">
                 {TABS.map((t) => (
                   <button key={t.id} onClick={() => handleTabClick(t)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all relative ${
+                    className={`flex items-center gap-1.5 px-3.5 py-2.5 min-h-11 rounded-xl text-sm font-medium transition-all relative ${
                       type === t.id
                         ? "bg-indigo-600 text-white shadow-md scale-105"
                         : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700"
@@ -277,10 +322,30 @@ export default function Home() {
               {type === "sms"   && (<><input className={inputClass} type="tel" placeholder="Phone number" value={smsPhone} onChange={e => setSmsPhone(e.target.value)} /><textarea className={inputClass} rows={3} placeholder="Message (optional)" value={smsMsg} onChange={e => setSmsMsg(e.target.value)} /></>)}
               {type === "wifi"  && (<><input className={inputClass} type="text" placeholder="Network name (SSID)" value={wifi.ssid} onChange={e => setWifi(w => ({ ...w, ssid: e.target.value }))} /><input className={inputClass} type="text" placeholder="Password" value={wifi.password} onChange={e => setWifi(w => ({ ...w, password: e.target.value }))} /><select className={inputClass} value={wifi.encryption} onChange={e => setWifi(w => ({ ...w, encryption: e.target.value }))}><option value="WPA">WPA/WPA2</option><option value="WEP">WEP</option><option value="nopass">No Password</option></select></>)}
               {type === "vcard" && (<><input className={inputClass} type="text" placeholder="Full name *" value={vcard.name} onChange={e => setVcard(v => ({ ...v, name: e.target.value }))} /><input className={inputClass} type="text" placeholder="Company" value={vcard.company} onChange={e => setVcard(v => ({ ...v, company: e.target.value }))} /><input className={inputClass} type="tel" placeholder="Phone" value={vcard.phone} onChange={e => setVcard(v => ({ ...v, phone: e.target.value }))} /><input className={inputClass} type="email" placeholder="Email" value={vcard.email} onChange={e => setVcard(v => ({ ...v, email: e.target.value }))} /><input className={inputClass} type="url" placeholder="Website" value={vcard.website} onChange={e => setVcard(v => ({ ...v, website: e.target.value }))} /></>)}
+              {type === "geo"   && (<><div className="grid grid-cols-2 gap-3"><input className={inputClass} type="text" inputMode="decimal" placeholder="Latitude *" value={geo.lat} onChange={e => setGeo(g => ({ ...g, lat: e.target.value }))} /><input className={inputClass} type="text" inputMode="decimal" placeholder="Longitude *" value={geo.lng} onChange={e => setGeo(g => ({ ...g, lng: e.target.value }))} /></div><input className={inputClass} type="text" placeholder="Place label (optional)" value={geo.label} onChange={e => setGeo(g => ({ ...g, label: e.target.value }))} /><p className="text-xs text-gray-400">Tip: copy coordinates from Google Maps (right-click a spot → the lat, long at the top).</p></>)}
+              {type === "event" && (<><input className={inputClass} type="text" placeholder="Event title *" value={event.title} onChange={e => setEvent(v => ({ ...v, title: e.target.value }))} /><input className={inputClass} type="text" placeholder="Location (optional)" value={event.location} onChange={e => setEvent(v => ({ ...v, location: e.target.value }))} /><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><label className="text-xs text-gray-500">Starts<input className={inputClass + " mt-1"} type="datetime-local" value={event.start} onChange={e => setEvent(v => ({ ...v, start: e.target.value }))} /></label><label className="text-xs text-gray-500">Ends<input className={inputClass + " mt-1"} type="datetime-local" value={event.end} onChange={e => setEvent(v => ({ ...v, end: e.target.value }))} /></label></div><textarea className={inputClass} rows={2} placeholder="Notes (optional)" value={event.notes} onChange={e => setEvent(v => ({ ...v, notes: e.target.value }))} /></>)}
             </div>
 
             {/* Customize */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Quick presets</p>
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                {OUTPUT_PRESETS.map(p => (
+                  <button key={p.id} onClick={() => applyPreset(p)}
+                    className={`text-left rounded-xl border p-3 transition active:scale-95 ${
+                      activePreset === p.id
+                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 ring-1 ring-indigo-500"
+                        : "border-gray-200 dark:border-gray-700 hover:border-indigo-300 hover:bg-indigo-50/50 dark:hover:bg-gray-800"
+                    }`}>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-base">{p.icon}</span>
+                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{p.label}</span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">{p.desc}</p>
+                  </button>
+                ))}
+              </div>
+
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Customize</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -311,8 +376,31 @@ export default function Home() {
                   Size: <span className="font-semibold text-gray-700 dark:text-gray-300">{Math.min(size, isPro ? 1024 : 512)}×{Math.min(size, isPro ? 1024 : 512)}px</span>
                   {!isPro && size > 512 && <span className="text-indigo-500 ml-1">(unlock up to 1024px with Pro)</span>}
                 </label>
-                <input type="range" min={128} max={isPro ? 1024 : 512} step={32} value={size}
-                  onChange={e => setSize(Number(e.target.value))} className="w-full accent-indigo-600" />
+                <input type="range" min={128} max={isPro ? 1024 : 512} step={32} value={Math.min(size, isPro ? 1024 : 512)}
+                  onChange={e => { setSize(Number(e.target.value)); setActivePreset(null); }} className="w-full accent-indigo-600" />
+              </div>
+              <div className="mt-4">
+                <label className="text-xs text-gray-500 mb-1.5 block">
+                  Error correction
+                  <span className="text-gray-400"> — higher = more scannable if damaged or has a logo</span>
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {([
+                    { v: "L", t: "Low" },
+                    { v: "M", t: "Medium" },
+                    { v: "Q", t: "High" },
+                    { v: "H", t: "Max" },
+                  ] as { v: ECLevel; t: string }[]).map(o => (
+                    <button key={o.v} onClick={() => { setEcLevel(o.v); setActivePreset(null); }}
+                      className={`py-2 rounded-xl text-xs font-semibold transition active:scale-95 ${
+                        ecLevel === o.v
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700"
+                      }`}>
+                      {o.t}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Logo upload — Pro only */}
