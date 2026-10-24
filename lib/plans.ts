@@ -31,7 +31,7 @@ export type PlanConfig = {
 export const DEFAULT_MONTHLY_CENTS = 399;
 export const DEFAULT_YEARLY_CENTS = 2900;
 export const DEFAULT_LIFETIME_CENTS = 3900;
-export const LIFETIME_BADGE = "Launch lifetime deal, limited";
+export const LIFETIME_BADGE = "Launch lifetime deal";
 
 /** Customer metadata key that marks a paid lifetime purchase. Value is the PaymentIntent id. */
 export const LIFETIME_METADATA_KEY = "makeqr_pro_lifetime";

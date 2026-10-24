@@ -58,8 +58,8 @@ describe("plan config", () => {
       ["yearly", 2900, "subscription", "price_year"],
       ["lifetime", 3900, "payment", "price_life"],
     ]);
-    assert.equal(findPlan(all, "lifetime")?.badge, "Launch lifetime deal, limited");
-    assert.equal(LIFETIME_BADGE, "Launch lifetime deal, limited");
+    assert.equal(findPlan(all, "lifetime")?.badge, "Launch lifetime deal");
+    assert.equal(LIFETIME_BADGE, "Launch lifetime deal");
   });
 
   it("uses the display-price env vars and ignores bad values", () => {

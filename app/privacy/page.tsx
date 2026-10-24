@@ -81,10 +81,6 @@ export default function PrivacyPage() {
                 remember your preferences (e.g., last-used QR type, color settings). You can clear
                 these at any time through your browser settings.
               </li>
-              <li>
-                <strong>Analytics data</strong> — aggregated, anonymized usage statistics to
-                understand how features are used.
-              </li>
             </ul>
           </section>
 
@@ -208,10 +204,6 @@ export default function PrivacyPage() {
                   <tr>
                     <td className="p-3 border border-gray-200">Advertising</td>
                     <td className="p-3 border border-gray-200">Google AdSense personalised and non-personalised ads</td>
-                  </tr>
-                  <tr className="bg-gray-50">
-                    <td className="p-3 border border-gray-200">Analytics</td>
-                    <td className="p-3 border border-gray-200">Aggregated, anonymised usage statistics</td>
                   </tr>
                 </tbody>
               </table>
