@@ -34,8 +34,8 @@ export default function PricingPage() {
             <p>
               Unlocks WiFi, Email, Phone, SMS and Contact codes, logo overlay, bulk generation, SVG export and sizes up
               to 1024px. Pro is a monthly subscription billed by Stripe that renews automatically until you cancel.
-              When checkout offers them, there is also a {PRO_YEARLY_PRICE} yearly subscription and a {PRO_LIFETIME_PRICE}
-              {" "}one-time lifetime purchase (limited launch deal). The price you pay is the one shown at Stripe checkout.
+              Yearly and lifetime plans are coming soon. When checkout offers them, there will also be a {PRO_YEARLY_PRICE} yearly
+              {" "}subscription and a {PRO_LIFETIME_PRICE} one-time lifetime purchase (launch deal). The price you pay is the one shown at Stripe checkout.
             </p>
           </section>
           <section>
