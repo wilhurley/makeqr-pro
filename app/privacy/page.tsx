@@ -62,7 +62,7 @@ export default function PrivacyPage() {
               <li>Third-party vendors, including Google, use cookies to serve ads based on a user&apos;s prior visits to this website or other websites.</li>
               <li>Google&apos;s use of advertising cookies enables it and its partners to serve ads to you based on your visits to this site and/or other sites on the Internet.</li>
               <li>You can opt out of personalized advertising at <a href="https://adssettings.google.com" className="text-indigo-600" target="_blank" rel="noopener noreferrer">https://adssettings.google.com</a> or <a href="https://www.aboutads.info" className="text-indigo-600" target="_blank" rel="noopener noreferrer">www.aboutads.info</a>.</li>
-              <li>Visitors in the EEA, UK and Switzerland see ads only after the consent message from Google&apos;s certified consent tool, or non-personalized ads.</li>
+              <li>If you&apos;re in the EEA, the UK or Switzerland, or we can&apos;t tell where you are, we don&apos;t load Google AdSense at all. You see no ads, and no ad cookies are set.</li>
             </ul>
           </section>
 
