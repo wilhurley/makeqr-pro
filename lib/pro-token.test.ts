@@ -132,6 +132,31 @@ describe("price config", () => {
     process.env.NEXT_PUBLIC_PRO_PRICE_CENTS = "nope";
     assert.equal(getProPriceCents(), 399);
   });
+
+  it("production value 399 shows $3.99 (2026-10-24 price change)", () => {
+    process.env.NEXT_PUBLIC_PRO_PRICE_CENTS = "399";
+    assert.equal(getProPriceCents(), 399);
+    assert.equal(formatProPrice(), "$3.99");
+    assert.equal(proPriceAmount(), "3.99");
+  });
+
+  it("terms say existing subscribers keep their current price and no source hardcodes $4.99", async () => {
+    const { readFileSync, readdirSync, statSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const terms = readFileSync(new URL("../app/terms/page.tsx", import.meta.url), "utf8");
+    assert.match(terms, /Existing subscribers keep their current price/);
+    const root = new URL("..", import.meta.url).pathname;
+    const hits: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const p = join(dir, name);
+        if (statSync(p).isDirectory()) walk(p);
+        else if (/\.(tsx?|json|xml|txt)$/.test(name) && !name.endsWith(".test.ts") && /\$4\.99/.test(readFileSync(p, "utf8")) && !/\* .*\$4\.99/.test(readFileSync(p, "utf8"))) hits.push(p);
+      }
+    };
+    for (const d of ["app", "components", "public"]) walk(join(root, d));
+    assert.deepEqual(hits, []);
+  });
 });
 
 describe("email", () => {

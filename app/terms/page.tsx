@@ -65,7 +65,7 @@ export default function TermsPage() {
               We don&apos;t store your full card number. Stripe does. There isn&apos;t a separate MakeQR account or password. When checkout succeeds, Pro unlocks in the browser you used, and the server re-checks your subscription with Stripe. On another device, or after clearing site data, email us from the address on your Stripe receipt and we&apos;ll help you get Pro back.
             </p>
             <p className="mt-2">
-              We&apos;ll email you before any price change takes effect, with instructions on how to cancel. <em>(Yearly plan, if offered: we&apos;ll email a reminder 15–45 days before each yearly renewal.)</em>
+              A price change applies to new subscriptions. Existing subscribers keep their current price. If we ever need to change the price of an existing subscription, we&apos;ll email you before it takes effect, with instructions on how to cancel. <em>(Yearly plan, if offered: we&apos;ll email a reminder 15–45 days before each yearly renewal.)</em>
             </p>
           </section>
 

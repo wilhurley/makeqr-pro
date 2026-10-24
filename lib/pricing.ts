@@ -3,6 +3,11 @@
  * this value is only the number shown in the UI and Offer structured data.
  * Defaults to 399 ($3.99/mo, approved by Jason 2026-10-23). Set
  * NEXT_PUBLIC_PRO_PRICE_CENTS to override. Changing it requires a rebuild.
+ * Production sets NEXT_PUBLIC_PRO_PRICE_CENTS=399 (changed from 499 on 2026-10-24).
+ *
+ * Price changes apply to new subscriptions only: existing subscribers keep their
+ * current price (Terms section 4). Changing this display value never touches
+ * Stripe Prices or existing subscriptions; billing is unchanged.
  */
 const DEFAULT_PRO_PRICE_CENTS = 399;
 /** Yearly ($29) and lifetime ($39 one-time) display prices. Only shown when their Stripe Price ids are set. */
