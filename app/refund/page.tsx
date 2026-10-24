@@ -46,7 +46,7 @@ export default function RefundPage() {
                 Charged by mistake (a duplicate charge, or a renewal right after you tried to cancel)? Email us within 30
                 days and we&apos;ll review it.
               </li>
-              <li>Approved refunds go back to the original card through Stripe. Banks can take 5-10 business days to show them.</li>
+              <li>Approved refunds are sent within 7 business days. Your bank may take 5 to 10 more business days to post them.</li>
             </ul>
           </section>
           <section>

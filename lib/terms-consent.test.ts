@@ -16,12 +16,12 @@ const monthly = { id: "monthly", mode: "subscription", price: "$3.99" } as const
 const yearly = { id: "yearly", mode: "subscription", price: "$50" } as const;
 const read = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 
-describe("terms of service text (Legal Review 2026-10-24, version d2)", () => {
+describe("terms of service text (Legal Review 2026-10-24, version d3)", () => {
   const md = termsMarkdown(PRICES);
   it("fills every placeholder: $3.99 Pro price, version, effective date", () => {
     assert.doesNotMatch(md, /\{\{|\[PRO PRICE|\[price\]|\[date published\]|DRAFT|\$4\.99/);
     assert.equal(md.match(/\$3\.99/g)?.length, 3);
-    assert.match(md, /Version 2026-10-24-d2 · Effective October 24, 2026/);
+    assert.match(md, /Version 2026-10-24-d3 · Effective October 24, 2026/);
     assert.match(md, /Yearly and one-time plans are not currently offered\. See C11\./);
     assert.match(md, /Yearly and one-time plans are not currently offered; if we offer one later/);
     assert.match(md, /yearly plans get a reminder 15 to 45 days before each renewal/);
@@ -36,7 +36,7 @@ describe("terms of service text (Legal Review 2026-10-24, version d2)", () => {
   });
   it("version constants agree and the hash is stable 16 hex chars", () => {
     assert.match(TERMS_SOURCE, /\{\{TERMS_VERSION\}\}/);
-    assert.equal(TERMS_VERSION, "2026-10-24-d2");
+    assert.equal(TERMS_VERSION, "2026-10-24-d3");
     assert.equal(TERMS_EFFECTIVE, "October 24, 2026");
     assert.match(read("./terms-content.ts"), new RegExp(`const TERMS_VERSION = "${TERMS_VERSION}"`));
     assert.match(termsSha256(PRICES), /^[0-9a-f]{16}$/);
@@ -46,7 +46,8 @@ describe("terms of service text (Legal Review 2026-10-24, version d2)", () => {
   it("the old 'keep using the site' clause is gone from the live /terms page and kept only in the archive", () => {
     assert.doesNotMatch(read("../app/terms/page.tsx"), /keep using/);
     assert.match(read("../app/terms/archive/2026-10-24-v0/page.tsx"), /archived version/);
-    assert.match(read("../app/terms/archive/2026-10-24-d1/page.tsx"), /Archived version/);
+    assert.match(read("../app/terms/archive/2026-10-24-d1/page.tsx"), /ArchivedTermsBanner plans/);
+    assert.match(read("../app/terms/archive/2026-10-24-d2/page.tsx"), /ArchivedTermsBanner/);
     assert.match(read("../components/SiteFooter.tsx"), /<p className="mt-2">QR Code is a registered trademark of DENSO WAVE INCORPORATED\.<\/p>/);
   });
 });
@@ -72,7 +73,7 @@ describe("checkout clickwrap", () => {
     const now = new Date("2026-10-25T14:03:11.123Z");
     const m = acceptanceMetadata({ plan: monthly, termsVersion: TERMS_VERSION, termsSha256: "abcd", privacyVersion: PRIVACY_VERSION, now });
     assert.deepEqual(m, {
-      terms_version: "2026-10-24-d2", terms_sha256: "abcd", privacy_version: "2026-10-24",
+      terms_version: "2026-10-24-d3", terms_sha256: "abcd", privacy_version: "2026-10-24",
       accepted_at: "2026-10-25T14:03:11Z", boxes: "terms,renewal", renewal_terms: "pro $3.99 USD month", source: "web-checkout",
     });
     for (const [k, v] of Object.entries(m)) { assert.ok(k.length <= 40); assert.ok(v.length <= 500); }

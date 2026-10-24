@@ -11,8 +11,8 @@ const UPDATED: Record<string, string> = {
   "https://makeqr.pro/about": "2026-10-22",
   "https://makeqr.pro/best-practices": "2026-10-22",
   "https://makeqr.pro/privacy": "2026-10-22",
-  "https://makeqr.pro/terms": "2026-10-23",
-  "https://makeqr.pro/refund": "2026-10-23",
+  "https://makeqr.pro/terms": "2026-10-24",
+  "https://makeqr.pro/refund": "2026-10-24",
   "https://makeqr.pro/pricing": "2026-10-24",
   "https://makeqr.pro/contact": "2026-10-23",
   ...Object.fromEntries(
