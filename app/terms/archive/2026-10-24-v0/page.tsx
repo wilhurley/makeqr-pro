@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArchivedTermsBanner } from "@/components/ArchivedTermsBanner";
 import { SiteFooter } from "@/components/SiteFooter";
 import { COMPANY, COMPANY_LOCATION, pageMetadata, SUPPORT_EMAIL } from "@/lib/site";
 
@@ -19,8 +20,8 @@ export default function ArchivedTermsV0Page() {
         <Link href="/" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
           ← Back to MakeQR Pro
         </Link>
+        <ArchivedTermsBanner plans />
         <h1 className="text-4xl font-bold text-gray-900 mt-3 mb-3">Terms of Service (archived version)</h1>
-        <p className="mt-2 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">This version was replaced by version 2026-10-24-d1. Plans it mentions other than monthly Pro were never sold. See the <Link href="/terms" className="underline">current Terms</Link>.</p>
         <p className="text-gray-500 text-sm">Last updated: {LAST_UPDATED}</p>
 
         <div className="space-y-7 text-gray-700 leading-relaxed mt-8">
