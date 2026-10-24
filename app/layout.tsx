@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | MakeQR",
   },
   description:
-    `Make a QR code for any link or text in seconds. Free, no signup, no watermark, PNG download. Pro (${PRO_PRICE}/mo) adds WiFi, contact, SMS, logos, SVG and bulk.`,
+    `Make a QR code for any link or text quickly. Free, no signup, no watermark, PNG download. Pro (${PRO_PRICE}/mo) adds WiFi, contact, SMS, logos, SVG and bulk.`,
   authors: [{ name: "Ridgeline Apps LLC" }],
   creator: "Ridgeline Apps LLC",
   publisher: "Ridgeline Apps LLC",

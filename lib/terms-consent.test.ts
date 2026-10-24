@@ -11,20 +11,21 @@ import {
 import { TERMS_SOURCE, termsMarkdown, termsSha256 } from "./terms-content.ts";
 import { PRIVACY_VERSION, TERMS_EFFECTIVE, TERMS_VERSION } from "./terms-version.ts";
 
-const PRICES = { pro: "$3.99", yearly: "$29", lifetime: "$39" };
+const PRICES = { pro: "$3.99" };
 const monthly = { id: "monthly", mode: "subscription", price: "$3.99" } as const;
-const yearly = { id: "yearly", mode: "subscription", price: "$29" } as const;
-const lifetime = { id: "lifetime", mode: "payment", price: "$39" } as const;
+const yearly = { id: "yearly", mode: "subscription", price: "$50" } as const;
 const read = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 
-describe("terms of service text (Legal Review 2026-10-24-d1)", () => {
+describe("terms of service text (Legal Review 2026-10-24, version d2)", () => {
   const md = termsMarkdown(PRICES);
   it("fills every placeholder: $3.99 Pro price, version, effective date", () => {
     assert.doesNotMatch(md, /\{\{|\[PRO PRICE|\[price\]|\[date published\]|DRAFT|\$4\.99/);
     assert.equal(md.match(/\$3\.99/g)?.length, 3);
-    assert.match(md, /Version 2026-10-24-d1 · Effective October 24, 2026/);
-    assert.match(md, /Yearly \(\$29, renews yearly until you cancel/);
-    assert.match(md, /lifetime \(\$39, one-time, no renewal\)/);
+    assert.match(md, /Version 2026-10-24-d2 · Effective October 24, 2026/);
+    assert.match(md, /Yearly and one-time plans are not currently offered\. See C11\./);
+    assert.match(md, /Yearly and one-time plans are not currently offered; if we offer one later/);
+    assert.match(md, /yearly plans get a reminder 15 to 45 days before each renewal/);
+    assert.doesNotMatch(md, /lifetime|\$29|\$39|launch deal/i);
   });
   it("keeps the DENSO WAVE notice, C18 change rules and no 'keep using = agree' clause", () => {
     assert.match(md, /QR Code is a registered trademark of DENSO WAVE INCORPORATED\. MakeQR Pro is not affiliated with or endorsed by DENSO WAVE\./);
@@ -35,7 +36,7 @@ describe("terms of service text (Legal Review 2026-10-24-d1)", () => {
   });
   it("version constants agree and the hash is stable 16 hex chars", () => {
     assert.match(TERMS_SOURCE, /\{\{TERMS_VERSION\}\}/);
-    assert.equal(TERMS_VERSION, "2026-10-24-d1");
+    assert.equal(TERMS_VERSION, "2026-10-24-d2");
     assert.equal(TERMS_EFFECTIVE, "October 24, 2026");
     assert.match(read("./terms-content.ts"), new RegExp(`const TERMS_VERSION = "${TERMS_VERSION}"`));
     assert.match(termsSha256(PRICES), /^[0-9a-f]{16}$/);
@@ -45,15 +46,15 @@ describe("terms of service text (Legal Review 2026-10-24-d1)", () => {
   it("the old 'keep using the site' clause is gone from the live /terms page and kept only in the archive", () => {
     assert.doesNotMatch(read("../app/terms/page.tsx"), /keep using/);
     assert.match(read("../app/terms/archive/2026-10-24-v0/page.tsx"), /archived version/);
-    assert.match(read("../components/SiteFooter.tsx"), /DENSO WAVE INCORPORATED/);
+    assert.match(read("../app/terms/archive/2026-10-24-d1/page.tsx"), /Archived version/);
+    assert.match(read("../components/SiteFooter.tsx"), /<p className="mt-2">QR Code is a registered trademark of DENSO WAVE INCORPORATED\.<\/p>/);
   });
 });
 
 describe("checkout clickwrap", () => {
   it("uses the spec's exact box wording", () => {
     assert.equal(renewalBoxText(monthly), "I agree that Pro renews automatically at $3.99 every month until I cancel. I can cancel anytime online with Manage billing.");
-    assert.equal(renewalBoxText(yearly), "I agree that Pro renews automatically at $29 every year until I cancel. I can cancel anytime online with Manage billing.");
-    assert.equal(renewalBoxText(lifetime), null);
+    assert.equal(renewalBoxText(yearly), "I agree that Pro renews automatically at $50 every year until I cancel. I can cancel anytime online with Manage billing.");
     assert.match(STRIPE_TERMS_MESSAGE, /^I agree to the \[Terms of Service\]\(https:\/\/makeqr\.pro\/terms\) and have read the \[Privacy Policy\]\(https:\/\/makeqr\.pro\/privacy\)\.$/);
   });
   it("rejects checkout server-side unless the required boxes are ticked for the current version", () => {
@@ -63,20 +64,17 @@ describe("checkout clickwrap", () => {
     assert.match(consentError({ ...ok, acceptTerms: "true" }, monthly, TERMS_VERSION) ?? "", /Terms of Service/);
     assert.match(consentError({ ...ok, acceptRenewal: false }, monthly, TERMS_VERSION) ?? "", /automatic renewal/);
     assert.match(consentError({ ...ok, acceptRenewal: false }, yearly, TERMS_VERSION) ?? "", /automatic renewal/);
-    assert.equal(consentError({ acceptTerms: true, termsVersion: TERMS_VERSION }, lifetime, TERMS_VERSION), null);
+    assert.match(consentError({ acceptTerms: true, termsVersion: TERMS_VERSION }, monthly, TERMS_VERSION) ?? "", /automatic renewal/);
     assert.match(consentError({ ...ok, termsVersion: "old" }, monthly, TERMS_VERSION) ?? "", /Terms were updated/);
-    assert.notEqual(consentError({}, lifetime, TERMS_VERSION), null);
+    assert.notEqual(consentError({}, monthly, TERMS_VERSION), null);
   });
   it("builds a privacy-minimal acceptance record", () => {
     const now = new Date("2026-10-25T14:03:11.123Z");
     const m = acceptanceMetadata({ plan: monthly, termsVersion: TERMS_VERSION, termsSha256: "abcd", privacyVersion: PRIVACY_VERSION, now });
     assert.deepEqual(m, {
-      terms_version: "2026-10-24-d1", terms_sha256: "abcd", privacy_version: "2026-10-24",
+      terms_version: "2026-10-24-d2", terms_sha256: "abcd", privacy_version: "2026-10-24",
       accepted_at: "2026-10-25T14:03:11Z", boxes: "terms,renewal", renewal_terms: "pro $3.99 USD month", source: "web-checkout",
     });
-    const l = acceptanceMetadata({ plan: lifetime, termsVersion: TERMS_VERSION, termsSha256: "abcd", privacyVersion: PRIVACY_VERSION, now });
-    assert.equal(l.boxes, "terms");
-    assert.equal("renewal_terms" in l, false);
     for (const [k, v] of Object.entries(m)) { assert.ok(k.length <= 40); assert.ok(v.length <= 500); }
   });
   it("checkout route requires Stripe's own Terms box and checks consent before creating a session", () => {
@@ -89,5 +87,33 @@ describe("checkout clickwrap", () => {
     assert.equal(stripeTermsAccepted({ consent: null }), false);
     const ui = read("../components/QrGenerator.tsx");
     assert.match(ui, /useState\(false\);\n  const \[acceptRenewal, setAcceptRenewal\] = useState\(false\)/);
+  });
+});
+
+describe("ads re-check 2026-10-24 11:45 (monthly only, DENSO footer, no 'in seconds')", () => {
+  const files = [
+    "../app/pricing/page.tsx", "../app/refund/page.tsx", "../app/page.tsx", "../app/layout.tsx", "../lib/schema.ts",
+    "../components/QrGenerator.tsx", "../components/SiteFooter.tsx", "../app/terms/page.tsx", "../public/manifest.json",
+  ];
+  it("no yearly or one-time option, no lifetime or launch deal wording on live pages", () => {
+    for (const f of files) {
+      const src = read(f);
+      assert.doesNotMatch(src, /lifetime|launch deal|\$29|\$39|PRO_YEARLY_PRICE|PRO_LIFETIME_PRICE/i, f);
+    }
+    assert.doesNotMatch(read("./pricing.ts"), /YEARLY|LIFETIME/);
+  });
+  it("JSON-LD offers only Free and monthly Pro", () => {
+    const schema = read("./schema.ts");
+    assert.equal(schema.match(/"@type": "Offer"/g)?.length, 2);
+    assert.match(schema, /billingDuration: "P1M"/);
+  });
+  it("says 'quickly', never 'in seconds'", () => {
+    for (const f of files) assert.doesNotMatch(read(f), /in seconds/i, f);
+    assert.match(read("../components/QrGenerator.tsx"), /link or text quickly\./);
+  });
+  it("every page with a footer uses SiteFooter", () => {
+    for (const f of ["../app/page.tsx", "../app/pricing/page.tsx", "../app/refund/page.tsx", "../app/terms/page.tsx", "../app/about/page.tsx", "../app/privacy/page.tsx", "../app/contact/page.tsx", "../app/best-practices/page.tsx", "../app/qr-code-for/[slug]/page.tsx"]) {
+      assert.match(read(f), /<SiteFooter \/>/, f);
+    }
   });
 });

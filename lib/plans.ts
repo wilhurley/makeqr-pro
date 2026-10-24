@@ -2,25 +2,24 @@
  * Pro plans offered at checkout. Pure functions with no imports so they can be
  * unit-tested with plain `node --test`.
  *
- * Approved prices (Jason, 2026-10-23): $3.99/mo, $29/yr, $39 lifetime (launch deal, first 300).
+ * Offered: Pro $3.99/mo only (ads re-check 2026-10-24 11:45: yearly and one-time options removed).
  *
  * - Monthly needs STRIPE_PRO_PRICE_ID and STRIPE_SECRET_KEY. The legacy NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
  *   (the old $4.99 Price) is never used, so a $3.99 display can't charge $4.99. Without both, Stripe is "not configured" and the site shows "Pro coming soon" with a waitlist link.
- * - Yearly shows only when STRIPE_PRO_YEARLY_PRICE_ID is set. Display price: NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS (default 2900).
- * - Lifetime shows only when STRIPE_PRO_LIFETIME_PRICE_ID is set. One-time Checkout (mode "payment").
- *   Display price: NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS (default 3900).
+ * - Yearly is not offered. The code path stays behind YEARLY_PLANS_ENABLED=on (off) plus
+ *   STRIPE_PRO_YEARLY_PRICE_ID, for later, once a yearly price is approved and the reminder email works.
+ * - No one-time plan exists. Checkout is subscription only.
  */
 
-export type PlanId = "monthly" | "yearly" | "lifetime";
+export type PlanId = "monthly" | "yearly";
 
 export type PlanOption = {
   id: PlanId;
   priceId: string;
   cents: number;
-  mode: "subscription" | "payment";
+  mode: "subscription";
   /** Short label for the button, e.g. "/ month". */
   per: string;
-  badge?: string;
 };
 
 export type PlanConfig = {
@@ -29,9 +28,8 @@ export type PlanConfig = {
 };
 
 export const DEFAULT_MONTHLY_CENTS = 399;
-export const DEFAULT_YEARLY_CENTS = 2900;
-export const DEFAULT_LIFETIME_CENTS = 3900;
-export const LIFETIME_BADGE = "Launch lifetime deal, limited";
+/** No approved yearly price; 0 means YEARLY_PLANS_ENABLED also needs NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS. */
+export const DEFAULT_YEARLY_CENTS = 0;
 
 /** Customer metadata key that marks a paid lifetime purchase. Value is the PaymentIntent id. */
 export const LIFETIME_METADATA_KEY = "makeqr_pro_lifetime";
@@ -50,7 +48,7 @@ export function parseCents(raw: string | undefined, fallback: number): number {
 }
 
 export function isPlanId(value: unknown): value is PlanId {
-  return value === "monthly" || value === "yearly" || value === "lifetime";
+  return value === "monthly" || value === "yearly";
 }
 
 export function planConfig(env: Env = process.env): PlanConfig {
@@ -70,24 +68,14 @@ export function planConfig(env: Env = process.env): PlanConfig {
   // Yearly stays off until the 15-45-day renewal reminder email works (Legal funding memo 2026-10-24 §7).
   // Off by default; turn on only with YEARLY_PLANS_ENABLED=on after the reminder is live.
   const yearly = clean(env.YEARLY_PLANS_ENABLED) === "on" ? clean(env.STRIPE_PRO_YEARLY_PRICE_ID) : "";
-  if (yearly) {
+  const yearlyCents = parseCents(env.NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS, DEFAULT_YEARLY_CENTS);
+  if (yearly && yearlyCents > 0) {
     plans.push({
       id: "yearly",
       priceId: yearly,
-      cents: parseCents(env.NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS, DEFAULT_YEARLY_CENTS),
+      cents: yearlyCents,
       mode: "subscription",
       per: "/ year",
-    });
-  }
-  const lifetime = clean(env.STRIPE_PRO_LIFETIME_PRICE_ID);
-  if (lifetime) {
-    plans.push({
-      id: "lifetime",
-      priceId: lifetime,
-      cents: parseCents(env.NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS, DEFAULT_LIFETIME_CENTS),
-      mode: "payment",
-      per: "one time",
-      badge: LIFETIME_BADGE,
     });
   }
   return { configured: true, plans };

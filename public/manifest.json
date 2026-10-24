@@ -1,7 +1,7 @@
 {
   "name": "MakeQR Pro — Free QR Code Generator",
   "short_name": "MakeQR Pro",
-  "description": "Make a QR code for any link or text in seconds. Free, no signup, no watermark, PNG download. Pro adds WiFi, contact, SMS, logos, SVG and bulk.",
+  "description": "Make a QR code for any link or text quickly. Free, no signup, no watermark, PNG download. Pro adds WiFi, contact, SMS, logos, SVG and bulk.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

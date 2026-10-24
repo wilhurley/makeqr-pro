@@ -20,7 +20,10 @@ export default function TermsArchivePage() {
             <Link href="/terms" className="text-indigo-600 underline">Version {TERMS_VERSION}</Link>, effective {TERMS_EFFECTIVE} (current)
           </li>
           <li>
-            <Link href="/terms/archive/2026-10-24-v0" className="text-indigo-600 underline">Earlier version</Link>, last updated October 24, 2026, replaced by {TERMS_VERSION}
+            <Link href="/terms/archive/2026-10-24-d1" className="text-indigo-600 underline">Version 2026-10-24-d1</Link>, effective October 24, 2026, replaced by {TERMS_VERSION}
+          </li>
+          <li>
+            <Link href="/terms/archive/2026-10-24-v0" className="text-indigo-600 underline">Earlier version</Link>, last updated October 24, 2026, replaced by 2026-10-24-d1
           </li>
         </ul>
       </div>

@@ -1,4 +1,3 @@
-import { PRO_LIFETIME_PRICE, PRO_PRICE, PRO_YEARLY_PRICE } from "@/lib/pricing";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -21,7 +20,7 @@ export default function ArchivedTermsV0Page() {
           ← Back to MakeQR Pro
         </Link>
         <h1 className="text-4xl font-bold text-gray-900 mt-3 mb-3">Terms of Service (archived version)</h1>
-        <p className="mt-2 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">This version was replaced by version 2026-10-24-d1. See the <Link href="/terms" className="underline">current Terms</Link>.</p>
+        <p className="mt-2 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">This version was replaced by version 2026-10-24-d1. Plans it mentions other than monthly Pro were never sold. See the <Link href="/terms" className="underline">current Terms</Link>.</p>
         <p className="text-gray-500 text-sm">Last updated: {LAST_UPDATED}</p>
 
         <div className="space-y-7 text-gray-700 leading-relaxed mt-8">
@@ -39,7 +38,7 @@ export default function ArchivedTermsV0Page() {
               Free includes URL and text codes, custom colors, and a PNG download, with no signup and no watermark. Free PNG goes up to 512px.
             </p>
             <p className="mt-2">
-              Pro is {PRO_PRICE} per month. It adds WiFi, email, phone, SMS, and contact codes, a logo in the center, SVG download, PNG sizes up to 1024px, and bulk generation. Bulk is a list of URLs you paste, one per line, downloaded as a ZIP.
+              Pro is $3.99 per month. It adds WiFi, email, phone, SMS, and contact codes, a logo in the center, SVG download, PNG sizes up to 1024px, and bulk generation. Bulk is a list of URLs you paste, one per line, downloaded as a ZIP.
             </p>
           </section>
 
@@ -53,14 +52,14 @@ export default function ArchivedTermsV0Page() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">4. Pro billing and cancellation</h2>
             <p>
-              Pro is billed by Stripe, {PRO_PRICE} per month, charged in advance. It renews each month until you cancel. You can cancel anytime with the Manage billing button or by emailing{" "}
+              Pro is billed by Stripe, $3.99 per month, charged in advance. It renews each month until you cancel. You can cancel anytime with the Manage billing button or by emailing{" "}
               <a href={`mailto:${SUPPORT_EMAIL}`} className="text-indigo-600">{SUPPORT_EMAIL}</a>.
               Canceling stops the next renewal. Unless the law requires it, we don&apos;t refund a month that has already started.
               See the <Link href="/refund" className="text-indigo-600">refund &amp; cancellation policy</Link>.
             </p>
             <p className="mt-3">
-              Yearly and lifetime plans are coming soon and aren&apos;t on sale at launch. When checkout offers them, Pro is also available yearly ({PRO_YEARLY_PRICE} per year, renews each year until you cancel)
-              or as a one-time lifetime purchase ({PRO_LIFETIME_PRICE}, a launch deal). Lifetime has no renewals and keeps Pro on
+              Yearly and lifetime plans are coming soon and aren&apos;t on sale at launch. When checkout offers them, Pro is also available yearly ($29 per year, renews each year until you cancel)
+              or as a one-time lifetime purchase ($39, a launch deal). Lifetime has no renewals and keeps Pro on
               for as long as MakeQR Pro is offered. A dispute, chargeback, or refund of that payment ends lifetime Pro.
             </p>
             <p className="mt-2">

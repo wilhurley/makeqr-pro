@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
-import { PRO_LIFETIME_PRICE, PRO_PRICE, PRO_YEARLY_PRICE } from "@/lib/pricing";
+import { PRO_PRICE } from "@/lib/pricing";
 import { COMPANY, COMPANY_LOCATION, pageMetadata, SUPPORT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
@@ -27,24 +27,21 @@ export default function RefundPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Who sells Pro</h2>
             <p>
               MakeQR Pro is operated by {COMPANY}, {COMPANY_LOCATION}. The free generator costs nothing. Pro is a
-              {" "}{PRO_PRICE} monthly subscription billed by Stripe. Yearly and lifetime plans are coming soon. When checkout offers them, there will also be a {PRO_YEARLY_PRICE}
-              {" "}yearly subscription and a {PRO_LIFETIME_PRICE} one-time lifetime purchase (launch deal).
+              {" "}{PRO_PRICE} monthly subscription billed by Stripe.
             </p>
           </section>
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Cancelling</h2>
             <ul className="list-disc pl-6 space-y-1">
               <li>Cancel anytime with the Manage billing button (Stripe&apos;s customer portal), or by emailing us.</li>
-              <li>Pro stays on until the end of the month (or year) you already paid for, then stops renewing. No cancellation fee.</li>
-              <li>Lifetime is a single payment with nothing to cancel.</li>
+              <li>Pro stays on until the end of the month you already paid for, then stops renewing. No cancellation fee.</li>
               <li>Codes you already downloaded keep working. They&apos;re static images and don&apos;t depend on your plan.</li>
             </ul>
           </section>
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Refunds</h2>
             <ul className="list-disc pl-6 space-y-1">
-              <li>A month or year that has already started isn&apos;t refunded, unless the law requires it.</li>
-              <li>A lifetime purchase that is refunded turns lifetime Pro off.</li>
+              <li>A month that has already started isn&apos;t refunded, unless the law requires it.</li>
               <li>
                 Charged by mistake (a duplicate charge, or a renewal right after you tried to cancel)? Email us within 30
                 days and we&apos;ll review it.

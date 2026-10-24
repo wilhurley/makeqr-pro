@@ -3,7 +3,6 @@ import { describe, it } from "node:test";
 import {
   findPlan,
   isPlanId,
-  LIFETIME_BADGE,
   lifetimeGrantFromSession,
   lifetimeRevokedByRefund,
   planConfig,
@@ -27,11 +26,8 @@ describe("plan config", () => {
     assert.equal(planConfig({ STRIPE_SECRET_KEY: "sk_test_x" }).configured, false);
     assert.equal(planConfig({ STRIPE_PRO_PRICE_ID: "price_month" }).configured, false);
     assert.equal(planConfig({ STRIPE_SECRET_KEY: "  ", STRIPE_PRO_PRICE_ID: "price_month" }).configured, false);
-    // Yearly/lifetime alone never turn checkout on.
-    assert.equal(
-      planConfig({ STRIPE_SECRET_KEY: "sk", STRIPE_PRO_YEARLY_PRICE_ID: "p_y", STRIPE_PRO_LIFETIME_PRICE_ID: "p_l" }).configured,
-      false,
-    );
+    // A yearly id alone never turns checkout on.
+    assert.equal(planConfig({ STRIPE_SECRET_KEY: "sk", STRIPE_PRO_YEARLY_PRICE_ID: "p_y", YEARLY_PLANS_ENABLED: "on" }).configured, false);
   });
 
   it("offers only monthly at $3.99 when only the monthly price is set", () => {
@@ -47,43 +43,28 @@ describe("plan config", () => {
     assert.equal(findPlan(both, "monthly")?.priceId, "price_month");
   });
 
-  it("keeps yearly off unless YEARLY_PLANS_ENABLED=on, even with a yearly price id", () => {
-    assert.deepEqual(planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year" }).plans.map((p) => p.id), ["monthly"]);
-    assert.deepEqual(planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", YEARLY_PLANS_ENABLED: "yes" }).plans.map((p) => p.id), ["monthly"]);
-    assert.deepEqual(planConfig({ ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year", YEARLY_PLANS_ENABLED: "on" }).plans.map((p) => p.id), ["monthly", "yearly"]);
+  it("keeps yearly off unless YEARLY_PLANS_ENABLED=on AND a yearly display price is set (none approved)", () => {
+    const Y = { ...BASE, STRIPE_PRO_YEARLY_PRICE_ID: "price_year" };
+    assert.deepEqual(planConfig(Y).plans.map((p) => p.id), ["monthly"]);
+    assert.deepEqual(planConfig({ ...Y, YEARLY_PLANS_ENABLED: "yes" }).plans.map((p) => p.id), ["monthly"]);
+    assert.deepEqual(planConfig({ ...Y, YEARLY_PLANS_ENABLED: "on" }).plans.map((p) => p.id), ["monthly"], "no default yearly price");
+    assert.deepEqual(planConfig({ ...Y, YEARLY_PLANS_ENABLED: "on", NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS: "5000" }).plans.map((p) => [p.id, p.cents]), [["monthly", 399], ["yearly", 5000]]);
   });
 
-  it("adds yearly ($29) and lifetime ($39, one-time) only when their price ids are set", () => {
-    const yearlyOnly = planConfig({ ...BASE, YEARLY_PLANS_ENABLED: "on", STRIPE_PRO_YEARLY_PRICE_ID: "price_year" });
-    assert.deepEqual(yearlyOnly.plans.map((p) => p.id), ["monthly", "yearly"]);
-    assert.equal(findPlan(yearlyOnly, "lifetime"), null);
-
-    const all = planConfig({ ...BASE, YEARLY_PLANS_ENABLED: "on", STRIPE_PRO_YEARLY_PRICE_ID: "price_year", STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
-    assert.deepEqual(all.plans.map((p) => [p.id, p.cents, p.mode, p.priceId]), [
-      ["monthly", 399, "subscription", "price_month"],
-      ["yearly", 2900, "subscription", "price_year"],
-      ["lifetime", 3900, "payment", "price_life"],
-    ]);
-    assert.equal(findPlan(all, "lifetime")?.badge, "Launch lifetime deal, limited");
-    assert.equal(LIFETIME_BADGE, "Launch lifetime deal, limited");
+  it("never offers a one-time plan, even if an old lifetime price id is set", () => {
+    const config = planConfig({ ...BASE, STRIPE_PRO_LIFETIME_PRICE_ID: "price_life" });
+    assert.deepEqual(config.plans.map((p) => [p.id, p.mode]), [["monthly", "subscription"]]);
+    assert.equal(config.plans.every((p) => p.mode === "subscription"), true);
   });
 
   it("uses the display-price env vars and ignores bad values", () => {
-    const config = planConfig({
-      ...BASE,
-      YEARLY_PLANS_ENABLED: "on",
-      STRIPE_PRO_YEARLY_PRICE_ID: "price_year",
-      STRIPE_PRO_LIFETIME_PRICE_ID: "price_life",
-      NEXT_PUBLIC_PRO_PRICE_CENTS: "500",
-      NEXT_PUBLIC_PRO_YEARLY_PRICE_CENTS: "3500",
-      NEXT_PUBLIC_PRO_LIFETIME_PRICE_CENTS: "nope",
-    });
-    assert.deepEqual(config.plans.map((p) => p.cents), [500, 3500, 3900]);
+    assert.deepEqual(planConfig({ ...BASE, NEXT_PUBLIC_PRO_PRICE_CENTS: "500" }).plans.map((p) => p.cents), [500]);
+    assert.deepEqual(planConfig({ ...BASE, NEXT_PUBLIC_PRO_PRICE_CENTS: "nope" }).plans.map((p) => p.cents), [399]);
   });
 
   it("only accepts known plan ids from the browser", () => {
-    for (const id of ["monthly", "yearly", "lifetime"]) assert.equal(isPlanId(id), true);
-    for (const id of ["", "Lifetime", "free", null, 1]) assert.equal(isPlanId(id), false);
+    for (const id of ["monthly", "yearly"]) assert.equal(isPlanId(id), true);
+    for (const id of ["", "lifetime", "Lifetime", "free", null, 1]) assert.equal(isPlanId(id), false);
   });
 });
 

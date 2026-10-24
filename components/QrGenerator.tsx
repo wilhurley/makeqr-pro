@@ -3,7 +3,7 @@ import { PRO_PRICE } from "@/lib/pricing";
 import { renewalBoxText } from "@/lib/checkout-consent";
 import { TERMS_VERSION } from "@/lib/terms-version";
 
-type PublicPlan = { id: "monthly" | "yearly" | "lifetime"; price: string; per: string; badge?: string };
+type PublicPlan = { id: "monthly" | "yearly"; price: string; per: string };
 type PlansState = { configured: boolean; plans: PublicPlan[] };
 
 const WAITLIST_HREF =
@@ -465,7 +465,7 @@ export default function QrGenerator({
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">Free QR Code Generator</h1>
             <p className="text-gray-500 dark:text-gray-400 text-base max-w-xl mx-auto">
-              Make a QR code for a link or text in seconds. Free, no signup, no watermark. Pro adds WiFi, contact cards, SMS, email, phone, logos and SVG.
+              Make a QR code for a link or text quickly. Free, no signup, no watermark. Pro adds WiFi, contact cards, SMS, email, phone, logos and SVG.
             </p>
           </div>
         )}
@@ -670,10 +670,9 @@ export default function QrGenerator({
               <>
                 {(() => {
                   const plan = plans.plans.find((p) => p.id === selectedPlan) ?? plans.plans[0];
-                  const subscription = plan.id !== "lifetime";
-                  const renewalText = renewalBoxText({ id: plan.id, mode: subscription ? "subscription" : "payment", price: plan.price });
+                  const renewalText = renewalBoxText({ id: plan.id, mode: "subscription", price: plan.price });
                   const period = plan.id === "yearly" ? "year" : "month";
-                  const ready = acceptTerms && (!subscription || acceptRenewal);
+                  const ready = acceptTerms && acceptRenewal;
                   return (
                     <div className="space-y-3 text-sm text-gray-800 dark:text-gray-200">
                       {plans.plans.length > 1 && (
@@ -683,15 +682,13 @@ export default function QrGenerator({
                             <label key={p.id} className="flex items-center gap-2">
                               <input type="radio" name="pro-plan" checked={plan.id === p.id}
                                 onChange={() => { setSelectedPlan(p.id); setAcceptRenewal(false); }} />
-                              <span>Pro {p.price} {p.per}{p.badge ? ` (${p.badge})` : ""}</span>
+                              <span>Pro {p.price} {p.per}</span>
                             </label>
                           ))}
                         </fieldset>
                       )}
                       <p>
-                        {subscription
-                          ? `MakeQR Pro, ${plan.price} per ${period}, charged now and then automatically every ${period} until you cancel. Cancel anytime online with Manage billing.`
-                          : `MakeQR Pro lifetime, ${plan.price}, one-time charge, no subscription. A refund or chargeback of this payment ends lifetime Pro.`}
+                        {`MakeQR Pro, ${plan.price} per ${period}, charged now and then automatically every ${period} until you cancel. Cancel anytime online with Manage billing.`}
                       </p>
                       <label className="flex items-start gap-2">
                         <input type="checkbox" required checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-1" />
@@ -707,16 +704,14 @@ export default function QrGenerator({
                       )}
                       <button onClick={() => void startCheckout(plan.id)} disabled={checkoutLoading !== null || !ready}
                         className="w-full font-bold py-3.5 rounded-2xl hover:opacity-90 disabled:opacity-50 transition bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-lg">
-                        {checkoutLoading === plan.id ? "Opening checkout..." : subscription ? `Subscribe for ${plan.price}/${period}` : `Pay ${plan.price}`}
+                        {checkoutLoading === plan.id ? "Opening checkout..." : `Subscribe for ${plan.price}/${period}`}
                       </button>
                     </div>
                   );
                 })()}
                 {checkoutError && <p className="text-center text-xs text-red-500 mt-2">{checkoutError}</p>}
                 <p className="text-center text-xs text-gray-400 mt-3">
-                  {plans.plans.some((plan) => plan.id === "lifetime")
-                    ? "Subscriptions cancel anytime · Lifetime is a one-time payment · Secure checkout via Stripe"
-                    : "Cancel anytime · Secure checkout via Stripe"}
+                  Cancel anytime · Secure checkout via Stripe
                 </p>
               </>
             )}

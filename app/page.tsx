@@ -11,7 +11,7 @@ import { USE_CASES } from "@/lib/use-cases";
 export const metadata = pageMetadata({
   title: "Free QR Code Generator, No Signup or Watermark | MakeQR",
   description:
-    `Make a QR code for any link or text in seconds. Free, no signup, no watermark, PNG download. Pro (${PRO_PRICE}/mo) adds WiFi, contact, SMS, logos, SVG and bulk.`,
+    `Make a QR code for any link or text quickly. Free, no signup, no watermark, PNG download. Pro (${PRO_PRICE}/mo) adds WiFi, contact, SMS, logos, SVG and bulk.`,
   path: "",
   absolute: true,
   ogTitle: "Free QR code generator, no signup, no watermark",
