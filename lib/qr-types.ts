@@ -1,5 +1,5 @@
 /** QR types and which ones need Pro. Pure, shared by the page and tests. */
-export type QRType = "url" | "text" | "email" | "phone" | "sms" | "wifi" | "vcard";
+export type QRType = "url" | "text" | "email" | "phone" | "sms" | "wifi" | "vcard" | "geo" | "event";
 
 export const FREE_TYPES: readonly QRType[] = ["url", "text"];
 export const DEFAULT_FREE_TYPE: QRType = "url";
