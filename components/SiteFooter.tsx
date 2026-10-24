@@ -23,6 +23,10 @@ export function SiteFooter() {
           Privacy
         </Link>
         {" · "}
+        <Link href="/pricing" className="text-indigo-500 hover:underline">
+          Pricing
+        </Link>
+        {" · "}
         <Link href="/terms" className="text-indigo-500 hover:underline">
           Terms
         </Link>

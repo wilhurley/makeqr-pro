@@ -13,6 +13,7 @@ const UPDATED: Record<string, string> = {
   "https://makeqr.pro/privacy": "2026-10-22",
   "https://makeqr.pro/terms": "2026-10-23",
   "https://makeqr.pro/refund": "2026-10-23",
+  "https://makeqr.pro/pricing": "2026-10-24",
   "https://makeqr.pro/contact": "2026-10-23",
   ...Object.fromEntries(
     USE_CASES.map((useCase) => [`https://makeqr.pro/qr-code-for/${useCase.slug}`, "2026-10-22"]),
@@ -37,6 +38,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
     { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/pricing", changeFrequency: "monthly", priority: 0.5 },
     { path: "/refund", changeFrequency: "yearly", priority: 0.3 },
     { path: "/contact", changeFrequency: "yearly", priority: 0.3 },
   ];

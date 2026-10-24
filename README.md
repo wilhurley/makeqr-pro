@@ -87,5 +87,3 @@ The app is a Next.js 16 project on Vercel (`qrmaker-pro`), with Cloudflare proxy
 That March deployment's source is the **Vercel CLI**, not a Git build. Pushes to `main` are not creating deployments. Reconnect the GitHub repo `wilhurley/makeqr-pro`, production branch `main`, in the Vercel project's Git settings, or deploy from a checkout of `main` after the env vars above are saved on the Vercel project. The env list visible for this project was empty, so confirm Production variables in the dashboard before the next deploy — a CLI deploy from a laptop can succeed with a local env file that was never saved on the project.
 
 Do not change DNS. `/about` and `/qr-code-best-practices` are normal App Router pages; a clean `npm run build` emits them, and the next production deploy of current `main` will serve them.
-
-On-site legal copy still names ARC Technologies LLC. This README does not change that.
