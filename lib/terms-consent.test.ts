@@ -16,12 +16,12 @@ const monthly = { id: "monthly", mode: "subscription", price: "$3.99" } as const
 const yearly = { id: "yearly", mode: "subscription", price: "$50" } as const;
 const read = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 
-describe("terms of service text (Legal Review 2026-10-24, version d4: Pro planned, not on sale)", () => {
+describe("terms of service text (Legal Review 2026-10-24, version d5: Pro planned, not on sale)", () => {
   const md = termsMarkdown(PRICES);
   it("fills every placeholder: planned $3.99 price, version, effective date", () => {
     assert.doesNotMatch(md, /\{\{|\[PRO PRICE|\[price\]|\[date published\]|DRAFT|\$4\.99/);
     assert.equal(md.match(/\$3\.99/g)?.length, 2);
-    assert.match(md, /Version 2026-10-24-d4 · Effective October 24, 2026/);
+    assert.match(md, /Version 2026-10-24-d5 · Effective October 24, 2026/);
     assert.doesNotMatch(md, /lifetime|\$29|\$39|launch deal/i);
   });
   it("memo §3a-3f replacements are in, word for word", () => {
@@ -53,7 +53,7 @@ describe("terms of service text (Legal Review 2026-10-24, version d4: Pro planne
   });
   it("version constants agree and the hash is stable 16 hex chars", () => {
     assert.match(TERMS_SOURCE, /\{\{TERMS_VERSION\}\}/);
-    assert.equal(TERMS_VERSION, "2026-10-24-d4");
+    assert.equal(TERMS_VERSION, "2026-10-24-d5");
     assert.equal(TERMS_EFFECTIVE, "October 24, 2026");
     assert.match(read("./terms-content.ts"), new RegExp(`const TERMS_VERSION = "${TERMS_VERSION}"`));
     assert.match(termsSha256(PRICES), /^[0-9a-f]{16}$/);
@@ -70,6 +70,7 @@ describe("terms of service text (Legal Review 2026-10-24, version d4: Pro planne
     assert.match(read("../app/terms/archive/2026-10-24-d1/page.tsx"), /ArchivedTermsBanner plans/);
     assert.match(read("../app/terms/archive/2026-10-24-d2/page.tsx"), /ArchivedTermsBanner/);
     assert.match(read("../app/terms/archive/2026-10-24-d3/page.tsx"), /ArchivedTermsD3Banner/);
+    assert.match(read("../app/terms/archive/2026-10-24-d4/page.tsx"), /ArchivedTermsD4Banner/);
     assert.match(read("../components/SiteFooter.tsx"), /<p className="mt-2">QR Code is a registered trademark of DENSO WAVE INCORPORATED\.<\/p>/);
   });
   it("the internal paid-terms draft is not in this public repo", () => {
@@ -90,8 +91,20 @@ describe("one contact address: support@ridgelineapps.us (Super Bot 2026-10-24; C
       assert.doesNotMatch(read(f), /wil@ridgelineapps\.us/, f);
     }
     assert.match(read("./site.ts"), /export const SUPPORT_EMAIL = "support@ridgelineapps\.us";/);
-    for (const f of ["./terms-archive-d1.ts", "./terms-archive-d2.ts", "./terms-archive-d3.ts"]) {
+    for (const f of ["./terms-archive-d1.ts", "./terms-archive-d2.ts", "./terms-archive-d3.ts", "./terms-archive-d4.ts"]) {
       assert.match(read(f), /wil@ridgelineapps\.us/, `${f} stays as published`);
+    }
+  });
+});
+
+describe("d5 bump forces no re-accept flow", () => {
+  it("the only version check is at checkout, which is off; the client always sends the current version", () => {
+    const gen = read("../components/QrGenerator.tsx");
+    assert.match(gen, /import \{ TERMS_VERSION \} from "@\/lib\/terms-version";/);
+    assert.match(gen, /termsVersion: TERMS_VERSION/);
+    for (const f of ["../app/api/pro/route.ts", "../app/api/restore/route.ts", "../app/api/restore/verify/route.ts",
+      "../app/api/verify-session/route.ts", "../app/api/billing-portal/route.ts", "./pro-access.ts", "./pro-token.ts"]) {
+      assert.doesNotMatch(read(f), /TERMS_VERSION|termsVersion|terms_version/, f);
     }
   });
 });
@@ -141,7 +154,7 @@ describe("checkout clickwrap", () => {
     const now = new Date("2026-10-25T14:03:11.123Z");
     const m = acceptanceMetadata({ plan: monthly, termsVersion: TERMS_VERSION, termsSha256: "abcd", privacyVersion: PRIVACY_VERSION, now });
     assert.deepEqual(m, {
-      terms_version: "2026-10-24-d4", terms_sha256: "abcd", privacy_version: "2026-10-24",
+      terms_version: "2026-10-24-d5", terms_sha256: "abcd", privacy_version: "2026-10-24",
       accepted_at: "2026-10-25T14:03:11Z", boxes: "terms,renewal", renewal_terms: "pro $3.99 USD month", source: "web-checkout",
     });
     for (const [k, v] of Object.entries(m)) { assert.ok(k.length <= 40); assert.ok(v.length <= 500); }
