@@ -1,4 +1,3 @@
-import { PRO_PRICE } from "@/lib/pricing";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -7,7 +6,7 @@ import { COMPANY, COMPANY_LOCATION, FOUNDER, pageMetadata, SUPPORT_EMAIL } from 
 export const metadata: Metadata = pageMetadata({
   title: "About MakeQR Pro: A Simple, Static QR Code Generator",
   description:
-    `MakeQR Pro is a small QR code generator from Ridgeline Apps LLC in Wheelersburg, Ohio. Static codes, no signup, no watermark, and a ${PRO_PRICE}/mo Pro plan.`,
+    `MakeQR Pro is a small QR code generator from Ridgeline Apps LLC in Wheelersburg, Ohio. Static codes, no signup, no watermark, and a Pro plan that's coming soon.`,
   path: "/about",
   absolute: true,
 });
@@ -38,7 +37,7 @@ export default function AboutPage() {
               Free is URL and text codes, custom colors, and a PNG download. No signup and no watermark. PNG on the free plan goes up to 512px.
             </p>
             <p className="mt-2">
-              Pro is {PRO_PRICE} a month. It adds WiFi, email, phone, SMS, and contact cards, a logo in the center, SVG download, sizes up to 1024px, and bulk codes. Bulk means you paste a list of URLs, one per line, and download a ZIP. There isn&apos;t a spreadsheet upload.
+              Pro is coming soon and isn&apos;t on sale yet. It will add WiFi, email, phone, SMS, and contact cards, a logo in the center, SVG download, sizes up to 1024px, and bulk codes. Bulk means you paste a list of URLs, one per line, and download a ZIP. There isn&apos;t a spreadsheet upload.
             </p>
           </section>
 

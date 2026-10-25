@@ -89,8 +89,9 @@ export default function QrGenerator({
   const [bulkLoading, setBulkLoading] = useState(false);
 
   const proLocked = !isFreeType(type) && !isPro;
-  // null while loading. "Pro coming soon" only once the server says Stripe is not configured.
-  const proComingSoon = plans !== null && !plans.configured;
+  // "Pro coming soon" is the default, including the server-rendered HTML and while /api/plans loads.
+  // The paid upgrade wording appears only after the server says checkout is configured.
+  const proComingSoon = plans === null || !plans.configured;
   const upgradeLabel = proComingSoon ? "Pro coming soon" : `Upgrade ${PRO_PRICE}/mo`;
 
   useEffect(() => {
@@ -636,8 +637,8 @@ export default function QrGenerator({
             <button onClick={() => setShowUpgrade(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">×</button>
             <div className="text-center mb-6">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">Q</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Upgrade to Pro</h2>
-              <p className="text-gray-500 mt-1">WiFi, contacts, logos, SVG, and bulk codes</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{proComingSoon ? "MakeQR Pro is coming soon" : "Upgrade to Pro"}</h2>
+              <p className="text-gray-500 mt-1">{proComingSoon ? "Not on sale yet. Pro will add WiFi, contacts, logos, SVG, and bulk codes" : "WiFi, contacts, logos, SVG, and bulk codes"}</p>
             </div>
             <div className="space-y-3 mb-6">
               {PRO_FEATURES.map(f => (
@@ -651,12 +652,7 @@ export default function QrGenerator({
                 </div>
               ))}
             </div>
-            {plans === null ? (
-              <button disabled
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-2xl opacity-50 text-lg">
-                Loading plans...
-              </button>
-            ) : !plans.configured ? (
+            {proComingSoon || plans === null ? (
               <>
                 <a href={WAITLIST_HREF}
                   className="block w-full text-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-2xl hover:opacity-90 transition text-lg">

@@ -1,4 +1,3 @@
-import { PRO_PRICE } from "@/lib/pricing";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
     template: "%s | MakeQR",
   },
   description:
-    `Make a QR code for any link or text quickly. Free, no signup, no watermark, PNG download. Pro (${PRO_PRICE}/mo) adds WiFi, contact, SMS, logos, SVG and bulk.`,
+    "Make a QR code for any link or text quickly. Free, no signup, no watermark, PNG download. Pro (coming soon) will add WiFi, contact, SMS, logos, SVG and bulk.",
   authors: [{ name: "Ridgeline Apps LLC" }],
   creator: "Ridgeline Apps LLC",
   publisher: "Ridgeline Apps LLC",
