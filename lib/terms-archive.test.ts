@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { TERMS_D1_SOURCE, termsD1Markdown } from "./terms-archive-d1.ts";
 import { termsD2Markdown } from "./terms-archive-d2.ts";
+import { termsD3Markdown } from "./terms-archive-d3.ts";
 import { termsMarkdown } from "./terms-content.ts";
 
 const read = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
@@ -13,6 +14,9 @@ const BANNER_PLANS =
   "Archived version, no longer in effect. Kept for our records only. The plans and prices below are not offered. Only the monthly Pro plan was ever sold. Current Terms: https://makeqr.pro/terms";
 const BANNER =
   "Archived version, no longer in effect. Kept for our records only. Current Terms: https://makeqr.pro/terms";
+/** Legal Review 2026-10-24 (revised d3 banner; no claim about purchases). */
+const D3_BANNER =
+  "Past version (2026-10-24-d3), replaced by version 2026-10-24-d4 on October 24, 2026. It is kept for the record and is not an offer.";
 const OLD_REFUND = "Approved refunds go back to your original payment method; banks can take 5 to 10 business days to show them.";
 const NEW_REFUND =
   "If we approve a refund, we send it to your original payment method within 7 business days. After that, your bank or card company may take another 5 to 10 business days to show it on your statement. We don't control that part.";
@@ -22,6 +26,8 @@ const PINNED = {
   d1Source: "9a7a6f38d5ed8c5ed3bf4f83a9199535fbe4e6f43f489c0fa70b9ac3b6632b8f",
   d1Rendered: "d617962bd7cca2fae5374475790a8427861a111f0fd3a2c31e1b2e726e2e7d50",
   d2Rendered: "45191b5237b1b028e638d180167c666bd379194557137d4850aa4ac76f6d3d72",
+  /** d3 as live at /terms from main 4d5cd87 (2026-10-24), before d4. */
+  d3Rendered: "ff531d61f4d91af05fd13bcdeb6c9126f0d9e23362b44f9aa2b3017211aa5c3f",
   /** app/terms/archive/2026-10-24-v0/page.tsx from its <h1> to the end, with only the old banner line removed. */
   v0Body: "8a1fb35476fa06049bf89a8d84dc9bc8e41fa093e2840341c952bf639179347d",
 };
@@ -30,6 +36,7 @@ const PAGES = {
   v0: "../app/terms/archive/2026-10-24-v0/page.tsx",
   d1: "../app/terms/archive/2026-10-24-d1/page.tsx",
   d2: "../app/terms/archive/2026-10-24-d2/page.tsx",
+  d3: "../app/terms/archive/2026-10-24-d3/page.tsx",
 };
 
 describe("archived Terms: old text unchanged byte-for-byte apart from the banner", () => {
@@ -46,11 +53,20 @@ describe("archived Terms: old text unchanged byte-for-byte apart from the banner
     const body = src.slice(src.indexOf('        <h1 className="text-4xl'));
     assert.equal(sha(body), PINNED.v0Body);
   });
+  it("d3 archive is exactly the d3 text that was live at /terms", () => {
+    assert.equal(sha(termsD3Markdown()), PINNED.d3Rendered);
+    assert.match(termsD3Markdown(), /Version 2026-10-24-d3 · Effective October 24, 2026/);
+  });
   it("d3 differs from d2 only in the refund timing sentence and the version label", () => {
     const d2 = termsD2Markdown();
     assert.equal(d2.split(OLD_REFUND).length, 2);
     const expected = d2.replace(OLD_REFUND, NEW_REFUND).replace("Version 2026-10-24-d2 ·", "Version 2026-10-24-d3 ·");
-    assert.equal(termsMarkdown({ pro: "$3.99" }), expected);
+    assert.equal(termsD3Markdown(), expected);
+  });
+  it("current Terms are d4 and differ from d3", () => {
+    const md = termsMarkdown({ pro: "$3.99" });
+    assert.match(md, /Version 2026-10-24-d4 · Effective October 24, 2026/);
+    assert.notEqual(md, termsD3Markdown());
   });
 });
 
@@ -73,6 +89,17 @@ describe("archived Terms: banner, noindex, out of nav and sitemap", () => {
     }
     assert.match(read("../app/terms/archive/page.tsx"), /robots: \{ index: false, follow: true \}/);
   });
+  it("d3 shows Legal's revised banner, exactly, above the old text", () => {
+    assert.ok(banner.includes(`"${D3_BANNER}"`));
+    assert.doesNotMatch(banner, /never applied to any purchase/);
+    const src = read(PAGES.d3);
+    assert.equal(src.split("<ArchivedTermsD3Banner />").length, 2);
+    assert.ok(src.indexOf("<ArchivedTermsD3Banner />") < src.indexOf("<TermsMarkdown"));
+    assert.match(src, /metadata\.robots = \{ index: false, follow: true \};/);
+    const index = read("../app/terms/archive/page.tsx");
+    assert.match(index, /href="\/terms\/archive\/2026-10-24-d3"/);
+    assert.match(index, /Version 2026-10-24-d2<\/Link>, effective October 24, 2026, replaced by 2026-10-24-d3/);
+  });
   it("archives are not in the sitemap or the footer nav", () => {
     assert.doesNotMatch(read("../app/sitemap.ts"), /archive/);
     assert.doesNotMatch(read("../components/SiteFooter.tsx"), /archive/);
@@ -80,10 +107,13 @@ describe("archived Terms: banner, noindex, out of nav and sitemap", () => {
 });
 
 describe("refund timing wording", () => {
-  it("current Terms carry the new sentence once and not the old one", () => {
+  it("d3 archive carries the new sentence once and not the old one; d4 has no live refund terms (memo §3e)", () => {
+    const d3 = termsD3Markdown();
+    assert.equal(d3.split(NEW_REFUND).length, 2);
+    assert.ok(!d3.includes(OLD_REFUND));
     const md = termsMarkdown({ pro: "$3.99" });
-    assert.equal(md.split(NEW_REFUND).length, 2);
-    assert.ok(!md.includes(OLD_REFUND));
+    assert.ok(!md.includes(NEW_REFUND) && !md.includes(OLD_REFUND));
+    assert.match(md, /MakeQR Pro doesn't take payments today, so there is nothing to refund\./);
     assert.doesNotMatch(md, /refunded in 7 days/i);
   });
   it("refund page uses the short line; no old '5-10' form on live pages", () => {
