@@ -6,6 +6,18 @@
 export const D3_BANNER =
   "Past version (2026-10-24-d3), replaced by version 2026-10-24-d4 on October 24, 2026. It is kept for the record and is not an offer.";
 
+/** Legal Review 2026-10-24 (same style as d3): exact text, no claim about acceptances or charges. */
+export const D4_BANNER =
+  "Past version (2026-10-24-d4), replaced by version 2026-10-24-d5 on October 24, 2026. It is kept for the record and is not an offer.";
+
+export function ArchivedTermsD4Banner() {
+  return (
+    <p data-archive-banner="" className="mt-4 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">
+      {D4_BANNER}
+    </p>
+  );
+}
+
 export function ArchivedTermsD3Banner() {
   return (
     <p data-archive-banner="" className="mt-4 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">

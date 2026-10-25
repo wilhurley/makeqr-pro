@@ -5,6 +5,7 @@ import { describe, it } from "node:test";
 import { TERMS_D1_SOURCE, termsD1Markdown } from "./terms-archive-d1.ts";
 import { termsD2Markdown } from "./terms-archive-d2.ts";
 import { termsD3Markdown } from "./terms-archive-d3.ts";
+import { TERMS_D4_SOURCE, termsD4Markdown } from "./terms-archive-d4.ts";
 import { termsMarkdown } from "./terms-content.ts";
 
 const read = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
@@ -17,6 +18,8 @@ const BANNER =
 /** Legal Review 2026-10-24 (revised d3 banner; no claim about purchases). */
 const D3_BANNER =
   "Past version (2026-10-24-d3), replaced by version 2026-10-24-d4 on October 24, 2026. It is kept for the record and is not an offer.";
+const D4_BANNER =
+  "Past version (2026-10-24-d4), replaced by version 2026-10-24-d5 on October 24, 2026. It is kept for the record and is not an offer.";
 const OLD_REFUND = "Approved refunds go back to your original payment method; banks can take 5 to 10 business days to show them.";
 const NEW_REFUND =
   "If we approve a refund, we send it to your original payment method within 7 business days. After that, your bank or card company may take another 5 to 10 business days to show it on your statement. We don't control that part.";
@@ -28,6 +31,8 @@ const PINNED = {
   d2Rendered: "45191b5237b1b028e638d180167c666bd379194557137d4850aa4ac76f6d3d72",
   /** d3 as live at /terms from main 4d5cd87 (2026-10-24), before d4. */
   d3Rendered: "ff531d61f4d91af05fd13bcdeb6c9126f0d9e23362b44f9aa2b3017211aa5c3f",
+  /** d4 as live at /terms from main 93ee7aa (2026-10-24, before the support@ change). */
+  d4Rendered: "8b43e6b34a144bed8b66fd24d007d839ee8b0d53fb84ba5adde30fdeebe3c92c",
   /** app/terms/archive/2026-10-24-v0/page.tsx from its <h1> to the end, with only the old banner line removed. */
   v0Body: "8a1fb35476fa06049bf89a8d84dc9bc8e41fa093e2840341c952bf639179347d",
 };
@@ -37,6 +42,7 @@ const PAGES = {
   d1: "../app/terms/archive/2026-10-24-d1/page.tsx",
   d2: "../app/terms/archive/2026-10-24-d2/page.tsx",
   d3: "../app/terms/archive/2026-10-24-d3/page.tsx",
+  d4: "../app/terms/archive/2026-10-24-d4/page.tsx",
 };
 
 describe("archived Terms: old text unchanged byte-for-byte apart from the banner", () => {
@@ -63,10 +69,18 @@ describe("archived Terms: old text unchanged byte-for-byte apart from the banner
     const expected = d2.replace(OLD_REFUND, NEW_REFUND).replace("Version 2026-10-24-d2 ·", "Version 2026-10-24-d3 ·");
     assert.equal(termsD3Markdown(), expected);
   });
-  it("current Terms are d4 and differ from d3", () => {
+  it("d4 archive is exactly the d4 text that was live at /terms (main 93ee7aa, wil@ contact)", () => {
+    assert.equal(sha(termsD4Markdown()), PINNED.d4Rendered);
+    assert.match(termsD4Markdown(), /Version 2026-10-24-d4 · Effective October 24, 2026 · Ridgeline Apps LLC \(Ohio\) · wil@ridgelineapps\.us/);
+    assert.equal(TERMS_D4_SOURCE.match(/wil@ridgelineapps\.us/g)?.length, 6);
+  });
+  it("current Terms are d5 and differ from d4 only in the contact address and version label", () => {
     const md = termsMarkdown({ pro: "$3.99" });
-    assert.match(md, /Version 2026-10-24-d4 · Effective October 24, 2026/);
-    assert.notEqual(md, termsD3Markdown());
+    assert.match(md, /Version 2026-10-24-d5 · Effective October 24, 2026/);
+    const expected = termsD4Markdown()
+      .replaceAll("wil@ridgelineapps.us", "support@ridgelineapps.us")
+      .replace("Version 2026-10-24-d4 ·", "Version 2026-10-24-d5 ·");
+    assert.equal(md, expected);
   });
 });
 
@@ -88,6 +102,17 @@ describe("archived Terms: banner, noindex, out of nav and sitemap", () => {
       assert.match(src, /metadata\.robots = \{ index: false, follow: true \};/, key);
     }
     assert.match(read("../app/terms/archive/page.tsx"), /robots: \{ index: false, follow: true \}/);
+  });
+  it("d4 shows Legal's banner, exactly, above the old text; no acceptance or charge claims", () => {
+    assert.ok(banner.includes(`"${D4_BANNER}"`));
+    assert.doesNotMatch(banner, /accepted|zero charges|no charges|never applied/i);
+    const src = read(PAGES.d4);
+    assert.equal(src.split("<ArchivedTermsD4Banner />").length, 2);
+    assert.ok(src.indexOf("<ArchivedTermsD4Banner />") < src.indexOf("<TermsMarkdown"));
+    assert.match(src, /metadata\.robots = \{ index: false, follow: true \};/);
+    const index = read("../app/terms/archive/page.tsx");
+    assert.match(index, /href="\/terms\/archive\/2026-10-24-d4"/);
+    assert.match(index, /Version 2026-10-24-d3<\/Link>, effective October 24, 2026, replaced by 2026-10-24-d4 on October 24, 2026/);
   });
   it("d3 shows Legal's revised banner, exactly, above the old text", () => {
     assert.ok(banner.includes(`"${D3_BANNER}"`));
