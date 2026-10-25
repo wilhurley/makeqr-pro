@@ -26,8 +26,9 @@ export default function RefundPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Who sells Pro</h2>
             <p>
-              MakeQR Pro is operated by {COMPANY}, {COMPANY_LOCATION}. The free generator costs nothing. Pro is a
-              {" "}{PRO_PRICE} monthly subscription billed by Stripe.
+              MakeQR Pro is operated by {COMPANY}, {COMPANY_LOCATION}. The free generator costs nothing. Pro is
+              coming soon and isn&apos;t on sale yet. When it launches, Pro will be a monthly subscription billed by
+              Stripe at a planned price of {PRO_PRICE} a month. This policy applies once Pro is on sale.
             </p>
           </section>
           <section>

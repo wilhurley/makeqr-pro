@@ -1,4 +1,3 @@
-import { PRO_PRICE } from "@/lib/pricing";
 import Link from "next/link";
 import QrGenerator from "@/components/QrGenerator";
 import { JsonLd } from "@/components/JsonLd";
@@ -11,7 +10,7 @@ import { USE_CASES } from "@/lib/use-cases";
 export const metadata = pageMetadata({
   title: "Free QR Code Generator, No Signup or Watermark | MakeQR",
   description:
-    `Make a QR code for any link or text quickly. Free, no signup, no watermark, PNG download. Pro (${PRO_PRICE}/mo) adds WiFi, contact, SMS, logos, SVG and bulk.`,
+    "Make a QR code for any link or text quickly. Free, no signup, no watermark, PNG download. Pro (coming soon) will add WiFi, contact, SMS, logos, SVG and bulk.",
   path: "",
   absolute: true,
   ogTitle: "Free QR code generator, no signup, no watermark",
@@ -31,7 +30,7 @@ export default function HomePage() {
             URL and text codes are free. You get custom colors, a PNG download, no signup, and no watermark. Free PNG goes up to 512px.
           </p>
           <p className="leading-relaxed mt-2">
-            Pro is {PRO_PRICE} a month. It adds WiFi, email, phone, SMS, and contact cards, a logo in the center, SVG download, bulk codes, and sizes up to 1024px. Bulk is a pasted list of URLs, one per line, saved as a ZIP. There&apos;s no spreadsheet upload.
+            Pro is coming soon and isn&apos;t on sale yet. It will add WiFi, email, phone, SMS, and contact cards, a logo in the center, SVG download, bulk codes, and sizes up to 1024px. Bulk is a pasted list of URLs, one per line, saved as a ZIP. There&apos;s no spreadsheet upload.
           </p>
         </section>
 

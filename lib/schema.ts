@@ -1,4 +1,3 @@
-import { proPriceAmount } from "@/lib/pricing";
 import { HOME_FAQS } from "@/lib/home-faq";
 import { COMPANY, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
 
@@ -50,7 +49,7 @@ export const homeJsonLd = {
       browserRequirements: "Requires JavaScript",
       publisher: { "@id": `${SITE_URL}/#org` },
       description:
-        "Free static QR code generator for links and text, with PNG download, custom colors, no signup and no watermark. Pro adds WiFi, email, phone, SMS and contact codes, logo overlay, SVG export, bulk generation and sizes up to 1024px.",
+        "Free static QR code generator for links and text, with PNG download, custom colors, no signup and no watermark. Pro (coming soon, not on sale yet) will add WiFi, email, phone, SMS and contact codes, logo overlay, SVG export, bulk generation and sizes up to 1024px.",
       offers: [
         {
           "@type": "Offer",
@@ -59,21 +58,6 @@ export const homeJsonLd = {
           priceCurrency: "USD",
           description:
             "URL and text QR codes, custom colors, PNG download. No signup, no watermark.",
-        },
-        {
-          "@type": "Offer",
-          name: "Pro",
-          price: proPriceAmount(),
-          priceCurrency: "USD",
-          priceSpecification: {
-            "@type": "UnitPriceSpecification",
-            price: proPriceAmount(),
-            priceCurrency: "USD",
-            billingDuration: "P1M",
-            unitCode: "MON",
-          },
-          description:
-            "All 7 QR types (URL, Text, WiFi, Email, Phone, SMS, Contact), logo overlay, SVG export, bulk generator, sizes up to 1024px, no ads.",
         },
       ],
     },

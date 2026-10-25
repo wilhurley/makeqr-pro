@@ -103,10 +103,10 @@ describe("ads re-check 2026-10-24 11:45 (monthly only, DENSO footer, no 'in seco
     }
     assert.doesNotMatch(read("./pricing.ts"), /YEARLY|LIFETIME/);
   });
-  it("JSON-LD offers only Free and monthly Pro", () => {
+  it("JSON-LD offers only Free while Pro is coming soon (no Pro Offer, no price)", () => {
     const schema = read("./schema.ts");
-    assert.equal(schema.match(/"@type": "Offer"/g)?.length, 2);
-    assert.match(schema, /billingDuration: "P1M"/);
+    assert.equal(schema.match(/"@type": "Offer"/g)?.length, 1);
+    assert.doesNotMatch(schema, /billingDuration|proPriceAmount/);
   });
   it("says 'quickly', never 'in seconds'", () => {
     for (const f of files) assert.doesNotMatch(read(f), /in seconds/i, f);
@@ -116,5 +116,25 @@ describe("ads re-check 2026-10-24 11:45 (monthly only, DENSO footer, no 'in seco
     for (const f of ["../app/page.tsx", "../app/pricing/page.tsx", "../app/refund/page.tsx", "../app/terms/page.tsx", "../app/about/page.tsx", "../app/privacy/page.tsx", "../app/contact/page.tsx", "../app/best-practices/page.tsx", "../app/qr-code-for/[slug]/page.tsx"]) {
       assert.match(read(f), /<SiteFooter \/>/, f);
     }
+  });
+});
+
+describe("Pro coming soon is the default (2026-10-24, no money until the Ohio vendor's license)", () => {
+  it("server-rendered and loading state show 'Pro coming soon', not a paid upgrade", () => {
+    const ui = read("../components/QrGenerator.tsx");
+    assert.match(ui, /const proComingSoon = plans === null \|\| !plans\.configured;/);
+    assert.doesNotMatch(ui, /Loading plans/);
+  });
+  it("marketing copy never says Pro costs X/mo as if it's on sale", () => {
+    for (const f of ["../app/page.tsx", "../app/layout.tsx", "../app/about/page.tsx", "./home-faq.ts", "./use-cases.ts", "./schema.ts"]) {
+      const src = read(f);
+      assert.doesNotMatch(src, /PRO_PRICE|\$\d+(\.\d\d)?\s*\/\s*mo|Pro is \$/, f);
+    }
+  });
+  it("/pricing says the price is planned and not on sale yet", () => {
+    const src = read("../app/pricing/page.tsx");
+    assert.match(src, /This is a planned price, and Pro is not on sale yet\./);
+    assert.match(src, /Pro: coming soon/);
+    assert.doesNotMatch(src, /Pro is a monthly subscription billed by Stripe that renews/);
   });
 });

@@ -6,7 +6,7 @@ import { COMPANY, COMPANY_LOCATION, pageMetadata, SUPPORT_EMAIL } from "@/lib/si
 
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
-  description: `MakeQR Pro pricing: the generator is free; Pro is ${PRO_PRICE}/month, billed by Stripe. Cancel anytime.`,
+  description: `MakeQR Pro pricing: the generator is free. Pro is coming soon at a planned price of ${PRO_PRICE}/month. It isn't on sale yet.`,
   path: "/pricing",
 });
 
@@ -30,17 +30,23 @@ export default function PricingPage() {
             </p>
           </section>
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Pro: {PRO_PRICE}/month</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Pro: coming soon</h2>
             <p>
-              Unlocks WiFi, Email, Phone, SMS and Contact codes, logo overlay, bulk generation, SVG export and sizes up
-              to 1024px. Pro is a monthly subscription billed by Stripe that renews automatically until you cancel.
-              The price you pay is the one shown at Stripe checkout.
+              <strong>Planned price: {PRO_PRICE}/month. This is a planned price, and Pro is not on sale yet.</strong>{" "}
+              You can&apos;t buy Pro today, and we don&apos;t take pre-orders or deposits. The planned price may change
+              before launch.
+            </p>
+            <p className="mt-2">
+              Pro will unlock WiFi, Email, Phone, SMS and Contact codes, logo overlay, bulk generation, SVG export and
+              sizes up to 1024px. When it launches, Pro will be a monthly subscription billed by Stripe that renews
+              automatically until you cancel, and the price you pay will be the one shown at Stripe checkout. To hear
+              when it opens, email <a href={`mailto:${SUPPORT_EMAIL}`} className="text-indigo-600">{SUPPORT_EMAIL}</a>.
             </p>
           </section>
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Cancelling and refunds</h2>
             <p>
-              Cancel anytime. Pro stays on until the end of the period you already paid for. See the{" "}
+              When Pro launches, you&apos;ll be able to cancel anytime, and Pro will stay on until the end of the period you already paid for. See the{" "}
               <Link href="/refund" className="text-indigo-600">Refund &amp; Cancellation Policy</Link> and the{" "}
               <Link href="/terms" className="text-indigo-600">Terms</Link>.
             </p>
