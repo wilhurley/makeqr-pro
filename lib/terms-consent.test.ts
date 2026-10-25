@@ -29,7 +29,7 @@ describe("terms of service text (Legal Review 2026-10-24, version d4: Pro planne
       "> - The **free** generator makes URL and text QR codes with no signup and no watermark. **Pro is planned but not on sale yet.** You can't buy it, pre-order it or pay a deposit for it, and we don't collect payment details. The planned price is $3.99 a month and may change.",
       "## A2. Pro (planned, not on sale yet)\n\n**Pro is not on sale yet.** You can't buy Pro today. We don't take pre-orders or deposits for it, and we don't collect card or other payment details. Nothing on makeqr.pro or in these Terms is an offer to sell Pro.",
       "**The planned price is $3.99 a month. The price and features may change before launch.**",
-      "**Before anyone can buy Pro,** we'll publish a new version of these Terms with Pro's billing, automatic-renewal, cancellation and refund terms. Checkout will show those terms and the price before you pay, and you'll have to accept them by ticking the checkout boxes before you're charged. To hear when Pro opens, email wil@ridgelineapps.us.",
+      "**Before anyone can buy Pro,** we'll publish a new version of these Terms with Pro's billing, automatic-renewal, cancellation and refund terms. Checkout will show those terms and the price before you pay, and you'll have to accept them by ticking the checkout boxes before you're charged. To hear when Pro opens, email support@ridgelineapps.us.",
       "They cover the free QR code generator at makeqr.pro. Pro isn't on sale yet (see A2).",
       "**When these Terms bind you.** MakeQR Pro is free to use today, and these Terms apply to that use; they're linked at the bottom of every page. If we start selling Pro, you'll accept the Terms version that covers it by ticking the checkbox at checkout.",
       "## C9. Payments, prices and taxes\n\nMakeQR Pro doesn't take payments today, and we don't collect card or other payment details. Any price we mention for Pro is a planned price.",
@@ -75,6 +75,23 @@ describe("terms of service text (Legal Review 2026-10-24, version d4: Pro planne
   it("the internal paid-terms draft is not in this public repo", () => {
     for (const f of ["./terms-content.ts", "./terms-archive-d3.ts", "../app/terms/page.tsx"]) {
       assert.doesNotMatch(read(f), /paid-terms-DRAFT|not-in-effect/, f);
+    }
+  });
+});
+
+describe("one contact address: support@ridgelineapps.us (Super Bot 2026-10-24; Cloudflare Email Routing forwards it)", () => {
+  it("live Terms and site use support@, never wil@; archives d1-d3 are untouched", () => {
+    const md = termsMarkdown(PRICES);
+    assert.ok(md.includes("Ridgeline Apps LLC (Ohio) · support@ridgelineapps.us**"));
+    assert.doesNotMatch(md, /wil@ridgelineapps\.us/);
+    for (const f of ["./site.ts", "./restore.ts", "./terms-content.ts", "../app/api/checkout/route.ts",
+      "../app/api/billing-portal/route.ts", "../app/privacy/page.tsx", "../components/QrGenerator.tsx",
+      "../app/contact/page.tsx", "../app/pricing/page.tsx", "../app/terms/page.tsx"]) {
+      assert.doesNotMatch(read(f), /wil@ridgelineapps\.us/, f);
+    }
+    assert.match(read("./site.ts"), /export const SUPPORT_EMAIL = "support@ridgelineapps\.us";/);
+    for (const f of ["./terms-archive-d1.ts", "./terms-archive-d2.ts", "./terms-archive-d3.ts"]) {
+      assert.match(read(f), /wil@ridgelineapps\.us/, `${f} stays as published`);
     }
   });
 });
