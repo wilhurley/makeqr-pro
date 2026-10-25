@@ -8,7 +8,7 @@ import { termsMarkdown } from "@/lib/terms-content";
 
 export const metadata: Metadata = pageMetadata({
   title: "Terms of Service",
-  description: "The terms for using MakeQR Pro's free QR code generator and the Pro subscription.",
+  description: "The terms for using MakeQR Pro's free QR code generator. Pro is planned and not on sale yet.",
   path: "/terms",
 });
 
@@ -21,8 +21,7 @@ export default function TermsPage() {
           ← Back to MakeQR Pro
         </Link>
         <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          Pro is coming soon and isn&apos;t on sale yet. The {PRO_PRICE} price in these Terms is a planned price. The
-          Pro and payment sections apply only once Pro is on sale and you buy it at checkout.
+          Pro is planned and isn&apos;t on sale yet. These Terms cover the free generator; see A2.
         </p>
         <TermsMarkdown source={source} />
         <p className="mt-10 text-sm text-gray-500">

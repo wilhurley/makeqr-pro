@@ -3,7 +3,7 @@ import { normalizeEmail } from "@/lib/email";
 import { findPlan, isPlanId, planConfig, type PlanId } from "@/lib/plans";
 import { getAppUrl, getStripe } from "@/lib/stripe";
 import { acceptanceMetadata, consentError, STRIPE_TERMS_MESSAGE, type ConsentBody } from "@/lib/checkout-consent";
-import { termsSha256 } from "@/lib/terms-content";
+import { PRO_SALE_TERMS_PUBLISHED, termsSha256 } from "@/lib/terms-content";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/terms-version";
 import { formatProPrice, PRO_PRICE } from "@/lib/pricing";
 
@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
   }
 
   const config = planConfig();
-  if (!config.configured) {
+  // Legal memo 2026-10-24 §3j: stay "coming soon" until paid-terms Terms are published, even if Stripe is set.
+  if (!config.configured || !PRO_SALE_TERMS_PUBLISHED) {
     return NextResponse.json(
       { comingSoon: true, error: "Pro is coming soon. Join the waitlist at support@ridgelineapps.us." },
       { status: 503 },
